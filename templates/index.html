@@ -21,7 +21,7 @@
   h2{font-size:16px;margin:0 0 12px}
   label{display:grid;grid-template-columns:28px 1fr 80px;gap:8px;align-items:center;font-size:13px;margin:8px 0}
   input[type=range]{width:100%}
-  input[type=number],input[type=text]{width:100%;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:transparent;color:var(--ink);font:inherit;font-size:13px}
+  input[type=number],input[type=text],input[type=password]{width:100%;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:transparent;color:var(--ink);font:inherit;font-size:13px}
   .row{display:flex;gap:8px;align-items:center;margin:8px 0}
   .row input[type=text]{flex:1}
   button{padding:7px 14px;border-radius:6px;border:1px solid var(--accent);background:var(--accent);color:#fff;font:inherit;font-size:13px;cursor:pointer}
@@ -37,6 +37,15 @@
   @media (max-width:640px){.scale{grid-template-columns:repeat(5,1fr)}}
   pre{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:12px;font-size:12px;overflow:auto;max-height:240px}
   footer{max-width:1040px;margin:0 auto;padding:0 16px 32px;color:var(--quiet);font-size:12px}
+  .ask textarea{width:100%;min-height:64px;padding:10px;border:1px solid var(--line);border-radius:8px;background:transparent;color:var(--ink);font:inherit;font-size:14px;resize:vertical}
+  .ask .examples{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+  .ask .examples button{background:transparent;color:var(--accent);border-color:var(--line);font-size:12px;padding:4px 10px}
+  .askres{display:grid;grid-template-columns:160px 1fr;gap:16px;margin-top:12px;align-items:start}
+  .askres .swatch{height:120px;margin:0}
+  .badge{display:inline-block;font-size:12px;padding:2px 10px;border-radius:999px;border:1px solid}
+  .badge.ok{color:var(--good);border-color:var(--good)} .badge.no{color:var(--bad);border-color:var(--bad)}
+  .trace{font-family:ui-monospace,Menlo,monospace;font-size:12px;color:var(--quiet);margin-top:8px;white-space:pre-wrap}
+  @media (max-width:640px){.askres{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -49,6 +58,24 @@
 </header>
 
 <main>
+  <section class="wide ask">
+    <h2>프롬프트로 색 정하기</h2>
+    <p class="sub" style="margin:0 0 8px">문장은 LLM이 해석하고, 값은 오라클이 계산합니다. 답에 나온 HEX가 오라클 결과와 다르면 <b>검증 실패</b>로 표시합니다.</p>
+    <textarea id="aIn" maxlength="300" placeholder="예) Kriteq teal 600보다 한 단계 진하게">Kriteq teal 600보다 한 단계 진하게</textarea>
+    <div class="examples">
+      <button type="button" data-ex="Kriteq teal 600보다 한 단계 진하게">teal 600 +1단계</button>
+      <button type="button" data-ex="네이비 브랜드 색에서 세 단계 연하게">navy 3단계 연하게</button>
+      <button type="button" data-ex="밝기 0.7, 채도 0.12, 색상각 30도 OKLCH 색">OKLCH 직접 지정</button>
+      <button type="button" data-ex="teal 버튼의 hover 색은 한 단계 진하게">hover 색</button>
+    </div>
+    <div class="row">
+      <input id="aTok" type="password" placeholder="접근 토큰 (설정한 경우)" aria-label="접근 토큰" style="max-width:220px">
+      <button id="aGo" type="button">계산</button>
+      <span id="aState" class="sub" style="margin:0"></span>
+    </div>
+    <div id="aRes"></div>
+    <div class="err" id="aErr"></div>
+  </section>
   <section>
     <h2>OKLCH → HEX</h2>
     <label>L <input id="oL" type="range" min="0" max="1" step="0.005" value="0.52"><input id="oLn" type="number" step="0.005" value="0.52"></label>
@@ -147,6 +174,36 @@ async function makeScale() {
   } catch (e) { $('sErr').textContent = e.message; }
 }
 $('sGo').onclick = makeScale;
+
+// 프롬프트 → LLM 의도 해석 → 오라클 계산 → 대조 검증
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+try { $('aTok').value = localStorage.getItem('co_token') || ''; } catch (e) {}
+document.querySelectorAll('[data-ex]').forEach(b => b.onclick = () => { $('aIn').value = b.dataset.ex; ask(); });
+async function ask() {
+  const prompt = $('aIn').value.trim(); if (!prompt) return;
+  const tok = $('aTok').value.trim();
+  try { localStorage.setItem('co_token', tok); } catch (e) {}
+  $('aGo').disabled = true; $('aState').textContent = '계산 중…'; $('aErr').textContent = '';
+  try {
+    const r = await fetch('/api/ask', {method: 'POST', headers: {'Content-Type': 'application/json', ...(tok ? {'X-Access-Token': tok} : {})}, body: JSON.stringify({prompt})});
+    const j = await r.json(); if (!r.ok) throw new Error(j.error || r.status);
+    const f = j.final;
+    const badge = j.verified ? '<span class="badge ok">검증 통과 · 값 = 오라클 결과</span>'
+      : `<span class="badge no">검증 실패${j.unverified_hexes.length ? ' · 오라클에 없는 값: ' + esc(j.unverified_hexes.join(', ')) : ''}</span>`;
+    const trace = j.calls.map(c => `${c.name}(${esc(JSON.stringify(c.input))}) → ${esc(c.result.hex || c.result.error || JSON.stringify(c.result).slice(0, 80))}`).join('\n');
+    $('aRes').innerHTML = `<div class="askres">
+      <div class="swatch" style="background:${f ? esc(f.hex) : 'transparent'}"></div>
+      <div>
+        <div>${badge}${j.cached ? ' <span class="sub">(같은 프롬프트 재사용)</span>' : ''}</div>
+        ${f ? `<div class="out" style="margin-top:8px;font-size:15px"><b>${esc(f.hex)}</b><br>${esc(f.oklch)}<br>${esc(f.lch)}${f.requested_oklch ? '<br><span class="sub">설계값 ' + esc(f.requested_oklch) + '</span>' : ''}</div>` : '<div class="sub">계산된 색이 없습니다</div>'}
+        <p style="margin:8px 0 0">${esc(j.answer)}</p>
+        <div class="trace">${trace || '도구 호출 없음'}</div>
+      </div></div>`;
+  } catch (e) { $('aErr').textContent = e.message; }
+  finally { $('aGo').disabled = false; $('aState').textContent = ''; }
+}
+$('aGo').onclick = ask;
+$('aIn').onkeydown = e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) ask(); };
 
 runCheck(); convOk(); convHex(); makeScale();
 </script>

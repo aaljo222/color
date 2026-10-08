@@ -11,6 +11,7 @@ GET  /api/oracle?op=scale&hex=%2300b8bb&name=teal
 GET  /api/oracle?op=selfcheck
 GET  /api/oracle?op=tools                      LLM에 등록할 도구 정의
 POST /api/oracle  {"name": "...", "input": {...}}   모델의 tool_use를 그대로 실행
+POST /api/ask     {"prompt": "Kriteq teal 600보다 한 단계 진하게"}   자연어 → LLM 의도 해석 → 오라클 계산 → 대조 검증
 """
 import io, json, os, contextlib
 from urllib.parse import parse_qs
@@ -61,6 +62,17 @@ def run_tool(name, inp):
     if name == "scale":
         r = co.scale(_hex(inp.get("hex")), str(inp.get("name") or "brand")[:32])
         return {k: r[k] for k in ("name", "base", "base_oklch", "brand_step", "steps", "css")}
+    if name == "step":
+        try:
+            s = int(inp.get("step"))
+        except (TypeError, ValueError):
+            raise ValueError("step은 50~900 정수입니다")
+        r = co.scale(_hex(inp.get("hex")))
+        if str(s) not in {str(k) for k in r["steps"]}:
+            raise ValueError("step은 50,100,…,900 중 하나입니다")
+        v = r["steps"][s]
+        return {"step": s, "hex": v["hex"], "oklch": v["oklch"], "gamut_mapped": v["gamut_mapped"],
+                "brand": v["brand"], "brand_step": r["brand_step"]}
     raise ValueError(f"알 수 없는 도구: {name}")
 
 
@@ -74,7 +86,7 @@ def selfcheck():
 CORS = [("Access-Control-Allow-Origin", "*"),
         ("Access-Control-Allow-Methods", "GET, POST, OPTIONS"),
         ("Access-Control-Allow-Headers", "Content-Type")]
-STATUS = {200: "200 OK", 204: "204 No Content", 400: "400 Bad Request", 404: "404 Not Found",
+STATUS = {200: "200 OK", 204: "204 No Content", 400: "400 Bad Request", 401: "401 Unauthorized", 404: "404 Not Found", 502: "502 Bad Gateway",
           405: "405 Method Not Allowed", 413: "413 Payload Too Large", 500: "500 Internal Server Error"}
 
 
@@ -113,10 +125,36 @@ def _api(environ, start_response):
         return _json(start_response, 500, {"error": f"내부 오류: {type(e).__name__}"})
 
 
+def _ask(environ, start_response):
+    """POST /api/ask {"prompt": "..."} — LLM이 의도를 해석하고 오라클 도구로 값을 계산, 서버가 대조 검증."""
+    import ask
+    if environ.get("REQUEST_METHOD") == "OPTIONS":
+        start_response(STATUS[204], CORS); return [b""]
+    if environ.get("REQUEST_METHOD") != "POST":
+        return _json(start_response, 405, {"error": "POST만 지원합니다"})
+    token = os.environ.get("ACCESS_TOKEN")
+    if token and environ.get("HTTP_X_ACCESS_TOKEN") != token:
+        return _json(start_response, 401, {"error": "접근 토큰이 맞지 않습니다"})
+    try:
+        n = int(environ.get("CONTENT_LENGTH") or 0)
+        if n > 10_000: return _json(start_response, 413, {"error": "요청이 너무 큽니다"})
+        data = json.loads(environ["wsgi.input"].read(n) or b"{}")
+        out = ask.answer(str(data.get("prompt") or ""), run_tool, TOOLS)
+        return _json(start_response, 200, out)
+    except ValueError as e:
+        return _json(start_response, 400, {"error": str(e)})
+    except ask.LLMError as e:
+        return _json(start_response, 502, {"error": str(e)})
+    except Exception as e:
+        return _json(start_response, 500, {"error": f"내부 오류: {type(e).__name__}"})
+
+
 def app(environ, start_response):
     path = environ.get("PATH_INFO", "/")
     if path.rstrip("/") == "/api/oracle":
         return _api(environ, start_response)
+    if path.rstrip("/") == "/api/ask":
+        return _ask(environ, start_response)
     if path in ("/", "/index.html"):
         start_response("200 OK", [("Content-Type", "text/html; charset=utf-8"),
                                   ("Content-Length", str(len(INDEX_HTML))),

@@ -7,9 +7,10 @@
 
 ```
 color-oracle-vercel/
-├─ app.py              # Vercel 엔트리포인트 (WSGI app) → / 와 /api/oracle
+├─ app.py              # Vercel 엔트리포인트 (WSGI app) → /, /api/oracle, /api/ask
+├─ ask.py              # 프롬프트 → Claude 의도 해석 → 오라클 계산 → 대조 검증
 ├─ color_oracle.py     # 변환 본체
-├─ tool_schema.json    # LLM 도구 정의 5개
+├─ tool_schema.json    # LLM 도구 정의 6개 (step 포함)
 ├─ templates/index.html# 변환기·팔레트 화면
 ├─ pyproject.toml      # [tool.vercel] entrypoint = "app:app", 의존성 없음
 ├─ vercel.json
@@ -35,6 +36,25 @@ vercel --prod
 
 배포 후 `https://<프로젝트>.vercel.app/api/oracle?op=selfcheck` 가 `"ok": true` 인지 먼저 확인합니다.
 Vercel 프로젝트 설정의 Framework Preset이 다른 값으로 잡혀 있으면 Other(또는 Python)로 바꿉니다.
+
+## 프롬프트 기능 (/api/ask)
+
+Vercel → Project → Settings → Environment Variables 에 넣고 Redeploy 합니다.
+
+| 이름 | 필수 | 설명 |
+| --- | --- | --- |
+| `ANTHROPIC_API_KEY` | 예 | Claude API 키 |
+| `CLAUDE_MODEL` | 아니오 | 기본 `claude-sonnet-5-5` |
+| `ACCESS_TOKEN` | 권장 | 설정하면 화면의 "접근 토큰" 칸에 같은 값을 넣어야 호출됨 (공개 URL로 API 크레딧이 새는 것 방지) |
+
+```bash
+curl -X POST https://<프로젝트>.vercel.app/api/ask \
+  -H "Content-Type: application/json" -H "X-Access-Token: <토큰>" \
+  -d '{"prompt":"Kriteq teal 600보다 한 단계 진하게"}'
+```
+
+응답의 `final`(hex·oklch·lch)은 LLM 문장이 아니라 마지막 오라클 결과에서 서버가 만든 값입니다.
+`verified`가 false면 LLM 답에 오라클이 계산하지 않은 HEX가 섞였거나 도구를 부르지 않은 경우입니다.
 
 ## API
 
