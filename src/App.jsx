@@ -5,6 +5,7 @@ import Palette from "./pages/Palette.jsx";
 import Tools from "./pages/Tools.jsx";
 import Vault from "./pages/Vault.jsx";
 import Login from "./pages/Login.jsx";
+import Signup from "./pages/Signup.jsx";
 import Concierge from "./pages/Concierge.jsx";
 
 const NAV = [["/", "기억 표본"], ["/palette", "색 문장"], ["/tools", "색 변환"], ["/vault", "내 보관함"], ["/concierge", "문의"]];
@@ -27,7 +28,7 @@ export default function App() {
           {user ? (
             <button className="link" onClick={() => supabase.auth.signOut()}>로그아웃</button>
           ) : (
-            <NavLink to="/login" className="link">로그인</NavLink>
+            <><NavLink to="/login" className="link">로그인</NavLink><span className="sep" aria-hidden>·</span><NavLink to="/signup" className="link">회원가입</NavLink></>
           )}
         </div>
       </header>
@@ -38,6 +39,7 @@ export default function App() {
           <Route path="/tools" element={<Tools />} />
           <Route path="/vault" element={<Vault />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
           <Route path="/concierge" element={<Concierge />} />
           <Route path="*" element={<p className="empty">없는 페이지입니다. 위 메뉴에서 고르세요.</p>} />
         </Routes>
