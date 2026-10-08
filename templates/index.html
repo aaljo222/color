@@ -43,7 +43,12 @@
   .askres{display:grid;grid-template-columns:160px 1fr;gap:16px;margin-top:12px;align-items:start}
   .askres .swatch{height:120px;margin:0}
   .badge{display:inline-block;font-size:12px;padding:2px 10px;border-radius:999px;border:1px solid}
-  .badge.ok{color:var(--good);border-color:var(--good)} .badge.no{color:var(--bad);border-color:var(--bad)}
+  .badge.ok{color:var(--good);border-color:var(--good)} .badge.no{color:var(--bad);border-color:var(--bad)} .badge.na{color:var(--quiet);border-color:var(--line)}
+  .palchips{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-top:12px}
+  .pchip{border:1px solid var(--line);border-radius:8px;overflow:hidden;font-size:12px}
+  .pchip div:first-child{height:72px}
+  .pchip div:last-child{padding:6px 8px;font-family:ui-monospace,Menlo,monospace}
+  .pchip .sub{font-size:11px}
   .trace{font-family:ui-monospace,Menlo,monospace;font-size:12px;color:var(--quiet);margin-top:8px;white-space:pre-wrap}
   @media (max-width:640px){.askres{grid-template-columns:1fr}}
 </style>
@@ -67,10 +72,12 @@
       <button type="button" data-ex="네이비 브랜드 색에서 세 단계 연하게">navy 3단계 연하게</button>
       <button type="button" data-ex="밝기 0.7, 채도 0.12, 색상각 30도 OKLCH 색">OKLCH 직접 지정</button>
       <button type="button" data-ex="teal 버튼의 hover 색은 한 단계 진하게">hover 색</button>
+      <button type="button" data-ex="덕수궁 돌담길">장면: 덕수궁 돌담길</button>
     </div>
     <div class="row">
       <input id="aTok" type="password" placeholder="접근 토큰 (설정한 경우)" aria-label="접근 토큰" style="max-width:220px">
       <button id="aGo" type="button">계산</button>
+      <button id="aRe" type="button" style="background:transparent;color:var(--accent)" title="고정값을 버리고 다시 계산해 덮어씁니다">다시 계산</button>
       <span id="aState" class="sub" style="margin:0"></span>
     </div>
     <div id="aRes"></div>
@@ -178,32 +185,36 @@ $('sGo').onclick = makeScale;
 // 프롬프트 → LLM 의도 해석 → 오라클 계산 → 대조 검증
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 try { $('aTok').value = localStorage.getItem('co_token') || ''; } catch (e) {}
-document.querySelectorAll('[data-ex]').forEach(b => b.onclick = () => { $('aIn').value = b.dataset.ex; ask(); });
-async function ask() {
+document.querySelectorAll('[data-ex]').forEach(b => b.onclick = () => { $('aIn').value = b.dataset.ex; ask(false); });
+async function ask(refresh = false) {
   const prompt = $('aIn').value.trim(); if (!prompt) return;
   const tok = $('aTok').value.trim();
   try { localStorage.setItem('co_token', tok); } catch (e) {}
   $('aGo').disabled = true; $('aState').textContent = '계산 중…'; $('aErr').textContent = '';
   try {
-    const r = await fetch('/api/ask', {method: 'POST', headers: {'Content-Type': 'application/json', ...(tok ? {'X-Access-Token': tok} : {})}, body: JSON.stringify({prompt})});
+    const r = await fetch('/api/ask', {method: 'POST', headers: {'Content-Type': 'application/json', ...(tok ? {'X-Access-Token': tok} : {})}, body: JSON.stringify({prompt, refresh})});
     const j = await r.json(); if (!r.ok) throw new Error(j.error || r.status);
-    const f = j.final;
-    const badge = j.verified ? '<span class="badge ok">검증 통과 · 값 = 오라클 결과</span>'
-      : `<span class="badge no">검증 실패${j.unverified_hexes.length ? ' · 오라클에 없는 값: ' + esc(j.unverified_hexes.join(', ')) : ''}</span>`;
-    const trace = j.calls.map(c => `${c.name}(${esc(JSON.stringify(c.input))}) → ${esc(c.result.hex || c.result.error || JSON.stringify(c.result).slice(0, 80))}`).join('\n');
-    $('aRes').innerHTML = `<div class="askres">
+    const f = j.final, pal = j.palette || [];
+    const badge = j.status === 'verified' ? '<span class="badge ok">검증 통과 · 값 = 오라클 결과</span>'
+      : j.status === 'no_color' ? '<span class="badge na">색을 정하지 않음</span>'
+      : `<span class="badge no">검증 실패 · 오라클에 없는 값: ${esc(j.unverified_hexes.join(', '))}</span>`;
+    const trace = j.calls.map(c => `${c.label ? '[' + esc(c.label) + '] ' : ''}${c.name}(${esc(JSON.stringify(c.input))}) → ${esc(c.result.hex || c.result.error || JSON.stringify(c.result).slice(0, 80))}`).join('\n');
+    const chips = pal.length > 1 ? `<div class="palchips">${pal.map(p => `<div class="pchip" title="${esc(p.oklch)}\n${esc(p.lch)}"><div style="background:${esc(p.hex)}"></div><div><b>${esc(p.label || '-')}</b><br>${esc(p.hex)}${p.gamut_mapped ? '<span class="tag">매핑</span>' : ''}<br><span class="sub">${esc(p.lch)}</span></div></div>`).join('')}</div>` : '';
+    $('aRes').innerHTML = pal.length > 1 ? `<div style="margin-top:12px">${badge}${j.cached ? ' <span class="sub">(고정값 재사용)</span>' : ''}</div>${chips}<p style="margin:8px 0 0">${esc(j.answer)}</p><div class="trace">${trace}</div>`
+      : `<div class="askres">
       <div class="swatch" style="background:${f ? esc(f.hex) : 'transparent'}"></div>
       <div>
-        <div>${badge}${j.cached ? ' <span class="sub">(같은 프롬프트 재사용)</span>' : ''}</div>
-        ${f ? `<div class="out" style="margin-top:8px;font-size:15px"><b>${esc(f.hex)}</b><br>${esc(f.oklch)}<br>${esc(f.lch)}${f.requested_oklch ? '<br><span class="sub">설계값 ' + esc(f.requested_oklch) + '</span>' : ''}</div>` : '<div class="sub">계산된 색이 없습니다</div>'}
+        <div>${badge}${j.cached ? ' <span class="sub">(고정값 재사용)</span>' : ''}</div>
+        ${f ? `<div class="out" style="margin-top:8px;font-size:15px"><b>${esc(f.hex)}</b><br>${esc(f.oklch)}<br>${esc(f.lch)}${f.requested_oklch ? '<br><span class="sub">설계값 ' + esc(f.requested_oklch) + '</span>' : ''}</div>` : '<div class="sub" style="margin-top:8px">계산된 색이 없습니다</div>'}
         <p style="margin:8px 0 0">${esc(j.answer)}</p>
         <div class="trace">${trace || '도구 호출 없음'}</div>
       </div></div>`;
   } catch (e) { $('aErr').textContent = e.message; }
   finally { $('aGo').disabled = false; $('aState').textContent = ''; }
 }
-$('aGo').onclick = ask;
-$('aIn').onkeydown = e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) ask(); };
+$('aGo').onclick = () => ask(false);
+$('aRe').onclick = () => ask(true);
+$('aIn').onkeydown = e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) ask(false); };
 
 runCheck(); convOk(); convHex(); makeScale();
 </script>

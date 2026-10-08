@@ -139,7 +139,7 @@ def _ask(environ, start_response):
         n = int(environ.get("CONTENT_LENGTH") or 0)
         if n > 10_000: return _json(start_response, 413, {"error": "요청이 너무 큽니다"})
         data = json.loads(environ["wsgi.input"].read(n) or b"{}")
-        out = ask.answer(str(data.get("prompt") or ""), run_tool, TOOLS)
+        out = ask.answer(str(data.get("prompt") or ""), run_tool, TOOLS, refresh=bool(data.get("refresh")))
         return _json(start_response, 200, out)
     except ValueError as e:
         return _json(start_response, 400, {"error": str(e)})
