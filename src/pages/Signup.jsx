@@ -8,8 +8,12 @@ function ko(msg = "") {
   if (m.includes("already registered") || m.includes("already exists")) return "이미 가입된 이메일입니다. 로그인해 주세요.";
   if (m.includes("password") && m.includes("characters")) return "비밀번호가 너무 짧습니다.";
   if (m.includes("rate limit") || m.includes("too many")) return "요청이 많습니다. 잠시 뒤 다시 시도하세요.";
+  if (m.includes("not authorized")) return "이 이메일로는 가입 메일을 보낼 수 없습니다 (메일 서버 설정 필요). 관리자에게 알려 주세요.";
+  if (m.includes("sending") && m.includes("email")) return "가입 확인 메일을 보내지 못했습니다. 잠시 뒤 다시 시도하세요.";
+  if (m.includes("database error")) return "가입 정보를 저장하지 못했습니다. 관리자에게 알려 주세요.";
+  if (m.includes("weak") || m.includes("pwned")) return "더 강한 비밀번호를 쓰세요 (흔한 비밀번호는 막혀 있습니다).";
   if (m.includes("invalid") && m.includes("email")) return "이메일 형식을 확인하세요.";
-  return "가입하지 못했습니다. 잠시 뒤 다시 시도하세요.";
+  return `가입하지 못했습니다: ${msg}`;
 }
 
 function strength(pw) {

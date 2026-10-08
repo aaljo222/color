@@ -155,6 +155,10 @@ button { cursor: pointer; }
 .agree .check input { margin-top: 4px; accent-color: var(--green); flex: none; }
 .agree .check:first-of-type { padding-bottom: 10px; border-bottom: 1px solid var(--line); }
 
+.notice { border: 1px solid var(--ox); background: var(--sheet); padding: 14px 16px; margin: 0 0 24px; }
+.notice p { margin: 0; font-size: 14px; }
+.notice .form-row input { flex: 1; }
+
 @media (max-width: 820px) {
   .plate, .palette-result, .tools { grid-template-columns: 1fr; }
   .plate-label { border-left: 0; border-top: 1px solid var(--line); padding: 24px 20px; }

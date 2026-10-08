@@ -1,4 +1,5 @@
-import { NavLink, Route, Routes } from "react-router-dom";
+import { useEffect } from "react";
+import { NavLink, Route, Routes, useNavigate } from "react-router-dom";
 import { useAuth, supabase } from "./auth.jsx";
 import Memory from "./pages/Memory.jsx";
 import Palette from "./pages/Palette.jsx";
@@ -12,6 +13,13 @@ const NAV = [["/", "기억 표본"], ["/palette", "색 문장"], ["/tools", "색
 
 export default function App() {
   const { user } = useAuth();
+  const nav = useNavigate();
+  // 메일 링크가 만료·무효면 Supabase가 #error_code=... 를 붙여 돌려보낸다 → 로그인 화면에서 안내
+  useEffect(() => {
+    const h = new URLSearchParams(window.location.hash.slice(1));
+    const code = h.get("error_code");
+    if (code) nav(`/login?err=${encodeURIComponent(code)}`, { replace: true });
+  }, [nav]);
   return (
     <div className="shell">
       <header className="top">

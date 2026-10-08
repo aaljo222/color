@@ -54,6 +54,7 @@ export default function Memory() {
         {!user && <p className="hint">로그인하지 않으면 하루 2번까지 만들 수 있고, 결과는 저장되지 않습니다. <Link to="/login">로그인</Link>하면 보관함에 남습니다.</p>}
         {err && <p className="error" role="alert">{err}</p>}
       </form>
+      {data?.save_error && <p className="hint" role="status">{data.save_error}</p>}
       {data && <Specimen data={data} />}
     </section>
   );
