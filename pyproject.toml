@@ -1,9 +1,0 @@
-[project]
-name = "color-oracle"
-version = "1.0.0"
-description = "색 변환을 LLM 밖에서 결정론적으로 계산하는 Color Oracle"
-requires-python = ">=3.12"
-dependencies = []
-
-[tool.vercel]
-entrypoint = "app:app"
