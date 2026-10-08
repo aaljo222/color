@@ -1,9 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "functions": {
-    "api/oracle.py": { "maxDuration": 10, "includeFiles": "api/_*" }
-  },
-  "headers": [
-    { "source": "/(.*)", "headers": [ { "key": "X-Content-Type-Options", "value": "nosniff" } ] }
-  ]
+    "app.py": { "maxDuration": 10 }
+  }
 }

@@ -7,34 +7,34 @@
 
 ```
 color-oracle-vercel/
-├─ api/
-│  ├─ oracle.py           # 서버리스 함수 → /api/oracle
-│  ├─ _color_oracle.py    # 변환 본체 (밑줄 = 함수로 배포되지 않는 내부 모듈)
-│  └─ _tool_schema.json   # LLM 도구 정의 5개
-├─ public/index.html      # 변환기·팔레트 UI → /
+├─ app.py              # Vercel 엔트리포인트 (WSGI app) → / 와 /api/oracle
+├─ color_oracle.py     # 변환 본체
+├─ tool_schema.json    # LLM 도구 정의 5개
+├─ templates/index.html# 변환기·팔레트 화면
+├─ pyproject.toml      # [tool.vercel] entrypoint = "app:app", 의존성 없음
 ├─ vercel.json
-├─ requirements.txt       # 비어 있음 (표준 라이브러리만 사용)
 └─ .gitignore
 ```
 
 ## 배포
 
-방법 A: CLI
+GitHub 연동(현재 aaljo222/color): 위 파일을 저장소 루트에 그대로 두고 push 하면 자동 빌드됩니다.
+예전 `api/`, `public/`, `requirements.txt`는 지웁니다.
+
+```bash
+git rm -r --cached api public requirements.txt 2>/dev/null; rm -rf api public requirements.txt
+git add -A && git commit -m "Vercel Python entrypoint로 전환" && git push
+```
+
+CLI로 올릴 때:
 
 ```bash
 npm i -g vercel
-cd color-oracle-vercel
-vercel          # 처음: 로그인, 프로젝트 이름 지정 → 미리보기 URL
-vercel --prod   # 운영 배포
+vercel --prod
 ```
 
-방법 B: GitHub 연동
-
-1. 이 폴더를 GitHub 저장소로 push
-2. vercel.com → Add New → Project → 저장소 Import
-3. Framework Preset: Other, Build Command 비움, Output Directory: `public` → Deploy
-
 배포 후 `https://<프로젝트>.vercel.app/api/oracle?op=selfcheck` 가 `"ok": true` 인지 먼저 확인합니다.
+Vercel 프로젝트 설정의 Framework Preset이 다른 값으로 잡혀 있으면 Other(또는 Python)로 바꿉니다.
 
 ## API
 
@@ -74,5 +74,5 @@ while True:
 ## 로컬 확인
 
 ```bash
-vercel dev   # http://localhost:3000
+python app.py   # http://localhost:8000 (표준 라이브러리 wsgiref)
 ```
