@@ -84,7 +84,7 @@ button { cursor: pointer; }
 /* 표본 판 — 이 페이지의 한 가지 대담한 요소 */
 .plate { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); margin-top: 56px; background: var(--sheet);
   border: 1px solid var(--line); }
-.plate-field { aspect-ratio: 1 / 1; background: var(--paper); }
+.plate-field { aspect-ratio: 4 / 5; background: var(--paper); }   /* 서버 그림 720×900 과 같은 비율 → 잘림 없음 */
 .plate-field img { width: 100%; height: 100%; object-fit: cover; }
 .area-field { display: flex; height: 100%; width: 100%; }
 .area-field.small { height: auto; aspect-ratio: 16 / 9; }
