@@ -38,7 +38,12 @@ export default function Specimen({ data }) {
             </li>
           ))}
         </ul>
-        {aff && (aff.chroma_pct || aff.dL) ? (
+        {aff && v.coverage != null && v.criteria?.arousal_c ? (
+          <p className="affect">
+            정서 쾌 {aff.valence} · 각성 {aff.arousal} → 심사 범위: 평균 채도 {v.criteria.arousal_c[0]}~{v.criteria.arousal_c[1]} · 평균 명도 {v.criteria.valence_l[0]}~{v.criteria.valence_l[1]}
+            {v.review ? <small> (이 그림 {v.review.chroma_w} · {v.review.light_w})</small> : null}
+          </p>
+        ) : aff && (aff.chroma_pct || aff.dL) ? (
           <p className="affect">
             정서 쾌 {aff.valence} · 각성 {aff.arousal}
             <small> (감정 기준 {aff.base?.[0]}·{aff.base?.[1]})</small> → 채도 {sign(aff.chroma_pct)}% · 명도 {sign(aff.dL)}
