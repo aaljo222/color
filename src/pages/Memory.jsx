@@ -11,6 +11,7 @@ export default function Memory() {
   const [memory, setMemory] = useState("");
   const [email, setEmail] = useState("");
   const [keep, setKeep] = useState(false);
+  const [engine, setEngine] = useState("");          // "" = 서버 기본(ENGINE_MODE), A/B 비교용
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const [data, setData] = useState(null);
@@ -21,7 +22,7 @@ export default function Memory() {
     setBusy(true); setErr("");
     try {
       const d = await api("/api/analyze", { method: "POST", token,
-        body: { memory: memory.trim(), email: email || null, keep_text: !!user && keep, include_image: true } });
+        body: { memory: memory.trim(), email: email || null, keep_text: !!user && keep, include_image: true, engine: engine || null } });
       setData(d);
     } catch (ex) { setErr(ex.message); } finally { setBusy(false); }
   }
@@ -42,6 +43,14 @@ export default function Memory() {
           <label className="field">
             <span>색 코드를 메일로 받기 (선택, 저장하지 않음)</span>
             <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" />
+          </label>
+          <label className="field">
+            <span>엔진 (비교용)</span>
+            <select value={engine} onChange={(e) => setEngine(e.target.value)}>
+              <option value="">서버 기본</option>
+              <option value="palette">팔레트 계산 (eng-1.2)</option>
+              <option value="image_first">그림 먼저 (eng-2.0)</option>
+            </select>
           </label>
           {user && (
             <label className="check">

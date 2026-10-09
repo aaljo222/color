@@ -1,13 +1,14 @@
 import { absUrl } from "../api.js";
 
 export const ROLE = { dominant: "주조색", supporting: "보조색", atmospheric: "분위기색", accent: "강조색" };
-const AXIS = { emotion: "감정", time: "시간", space: "장소", quality: "선명도", object: "사물" };
-const HOW = { keyword: "낱말 일치", label: "모델 라벨", retrieval: "검색", fallback: "기본 톤", lexicon: "사전 등급", grade: "모델 등급" };
+const AXIS = { emotion: "감정", time: "시간", space: "장소", quality: "선명도", object: "사물", image: "그림" };
+const HOW = { keyword: "낱말 일치", label: "모델 라벨", retrieval: "검색", fallback: "기본 톤", lexicon: "사전 등급", grade: "모델 등급", measured: "그림에서 측정" };
 
 // 기억 표본 한 장: 왼쪽 그림, 오른쪽 라벨(해시·면적비 막대·색 목록·검증)
 export default function Specimen({ data }) {
   const img = data.image_png_base64 ? `data:image/png;base64,${data.image_png_base64}` : absUrl(data.image_url);
   const v = data.verification || {};
+  const aff = data.affect || data.palette.map((p) => p.basis?.affect).find(Boolean);   // 저장본은 palette 안에서 찾는다
   return (
     <article className="plate" aria-label={`색 표본 ${data.specimen_hash}`}>
       <div className="plate-field">
@@ -30,14 +31,24 @@ export default function Specimen({ data }) {
                 <span className="why">
                   {AXIS[p.basis.axis]} “{p.basis.phrase || "—"}” · {HOW[p.basis.how] || p.basis.how}
                   {p.basis.adjust ? " · 대비 보정" : ""}
+                  {p.basis.affect ? " · 정서 보정" : ""}
+                  {p.basis.nearest ? ` · 가까운 기준색 ${p.basis.nearest.name} (ΔE ${p.basis.nearest.de00})` : ""}
                 </span>
               )}
             </li>
           ))}
         </ul>
+        {aff && (aff.chroma_pct || aff.dL) ? (
+          <p className="affect">
+            정서 쾌 {aff.valence} · 각성 {aff.arousal}
+            <small> (감정 기준 {aff.base?.[0]}·{aff.base?.[1]})</small> → 채도 {sign(aff.chroma_pct)}% · 명도 {sign(aff.dL)}
+          </p>
+        ) : null}
         {v.status && (
           <p className={`stamp ${v.status === "PASS" ? "ok" : "no"}`}>
-            {v.status === "PASS" ? "측정 일치" : "측정 불일치"} · 최대 ΔE00 {Number(v.max_de00).toFixed(2)}
+            {v.coverage != null
+              ? `${v.status === "PASS" ? "심사 통과" : "심사 미통과"} · 4색이 그림의 ${Math.round(v.coverage * 100)}% 대표`
+              : `${v.status === "PASS" ? "측정 일치" : "측정 불일치"} · 최대 ΔE00 ${Number(v.max_de00).toFixed(2)}`}
           </p>
         )}
         <p className="meta">
@@ -49,6 +60,8 @@ export default function Specimen({ data }) {
     </article>
   );
 }
+
+const sign = (n) => (n > 0 ? `+${n}` : `${n}`);
 
 function AreaField({ palette }) {
   return (
