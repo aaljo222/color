@@ -1,0 +1,83 @@
+From 0dd18ab0d148d46e6c9cd242d67dc8c30df05f9d Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?=EC=9D=B4=EC=9E=AC=EC=98=A4?= <aaljo2@gmail.com>
+Date: Sat, 10 Oct 2026 11:18:56 +0000
+Subject: [PATCH] =?UTF-8?q?=ED=91=9C=EB=B3=B8=EC=97=90=20=EC=BD=94?=
+ =?UTF-8?q?=ED=8D=BC=EC=8A=A4=20=EA=B7=BC=EA=B1=B0(grounding)=20=ED=91=9C?=
+ =?UTF-8?q?=EC=8B=9C=20=E2=80=94=20eng-2.2?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01MA6HLojYSgMbU3kiHDQXFK
+---
+ src/components/Specimen.jsx | 23 ++++++++++++++++++++++-
+ src/styles.css              |  7 +++++++
+ 2 files changed, 29 insertions(+), 1 deletion(-)
+
+diff --git a/src/components/Specimen.jsx b/src/components/Specimen.jsx
+index 6f9ff5a..8720df5 100644
+--- a/src/components/Specimen.jsx
++++ b/src/components/Specimen.jsx
+@@ -2,7 +2,7 @@ import { absUrl } from "../api.js";
+ 
+ export const ROLE = { dominant: "주조색", supporting: "보조색", atmospheric: "분위기색", accent: "강조색" };
+ const AXIS = { emotion: "감정", time: "시간", space: "장소", quality: "선명도", object: "사물", image: "그림" };
+-const HOW = { keyword: "낱말 일치", label: "모델 라벨", retrieval: "검색", fallback: "기본 톤", lexicon: "사전 등급", grade: "모델 등급", measured: "그림에서 측정" };
++const HOW = { keyword: "낱말 일치", label: "모델 라벨", corpus: "코퍼스 문단", retrieval: "검색", fallback: "기본 톤", lexicon: "사전 등급", grade: "모델 등급", measured: "그림에서 측정" };
+ 
+ // 기억 표본 한 장: 왼쪽 그림, 오른쪽 라벨(해시·면적비 막대·색 목록·검증)
+ export default function Specimen({ data }) {
+@@ -56,6 +56,7 @@ export default function Specimen({ data }) {
+               : `${v.status === "PASS" ? "측정 일치" : "측정 불일치"} · 최대 ΔE00 ${Number(v.max_de00).toFixed(2)}`}
+           </p>
+         )}
++        {data.grounding && <Grounding g={data.grounding} />}
+         <p className="meta">
+           {data.kb_version} / {data.engine_version}
+           {data.cache_hit ? " · 같은 기억이라 같은 표본" : ""}
+@@ -66,6 +67,26 @@ export default function Specimen({ data }) {
+   );
+ }
+ 
++// 코퍼스 RAG 근거 (eng-2.2): 이 표본에 쓰인 장면·사물 문단과, 적용된 규칙을 뒷받침하는 연구
++function Grounding({ g }) {
++  const n = (g.scenes?.length || 0) + (g.objects?.length || 0) + (g.research?.length || 0);
++  if (!n) return null;
++  return (
++    <details className="grounding">
++      <summary>왜 이 색인가 — 근거 {n}건 <small>({g.corpus_version})</small></summary>
++      {g.scenes?.length > 0 && (
++        <ul>{g.scenes.map((s) => <li key={s.id}>{AXIS[s.axis] || s.axis} · “{s.text}” → {s.color_note}{s.status === "draft" ? <em className="tag">초안</em> : null}</li>)}</ul>
++      )}
++      {g.objects?.length > 0 && (
++        <ul>{g.objects.map((o) => <li key={o.id}>사물 “{o.name}” · 코퍼스 등급 {o.grade.join(" · ")}{o.status === "draft" ? <em className="tag">초안</em> : null}</li>)}</ul>
++      )}
++      {g.research?.length > 0 && (
++        <ul className="refs">{g.research.map((r) => <li key={r.id}><a href={r.url} target="_blank" rel="noreferrer">{r.citation}</a></li>)}</ul>
++      )}
++    </details>
++  );
++}
++
+ const sign = (n) => (n > 0 ? `+${n}` : `${n}`);
+ 
+ function AreaField({ palette }) {
+diff --git a/src/styles.css b/src/styles.css
+index 1d46828..270a5c6 100644
+--- a/src/styles.css
++++ b/src/styles.css
+@@ -191,3 +191,10 @@ button { cursor: pointer; }
+   .ptable th:nth-child(5), .ptable td:nth-child(5) { display: none; }
+ }
+ @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
++
++/* eng-2.2 코퍼스 근거 */
++.grounding { margin: 12px 0 4px; font-size: 13px; line-height: 1.5; }
++.grounding summary { cursor: pointer; font-weight: 600; }
++.grounding ul { margin: 6px 0 0; padding-left: 18px; }
++.grounding li { margin: 2px 0; }
++.grounding .refs a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+-- 
+2.43.0
+
