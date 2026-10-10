@@ -52,7 +52,7 @@ export default function Specimen({ data }) {
         {v.status && (
           <p className={`stamp ${v.status === "PASS" ? "ok" : "no"}`}>
             {v.coverage != null
-              ? `${v.status === "PASS" ? "심사 통과" : "심사 미통과"} · 4색이 그림의 ${Math.round(v.coverage * 100)}% 대표`
+              ? `${v.status === "PASS" ? "심사 통과" : "심사 미통과"} · 4색이 그림의 ${(Math.floor(v.coverage * 1000) / 10).toFixed(1)}% 대표`
               : `${v.status === "PASS" ? "측정 일치" : "측정 불일치"} · 최대 ΔE00 ${Number(v.max_de00).toFixed(2)}`}
           </p>
         )}
