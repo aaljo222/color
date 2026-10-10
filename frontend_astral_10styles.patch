@@ -1,0 +1,1068 @@
+From 83e2a3dd6cf2c0842cdf66392eda9d96d558d965 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Sat, 10 Oct 2026 22:51:11 +0000
+Subject: [PATCH] =?UTF-8?q?=EC=82=AC=EC=A3=BC=20=EC=83=89=20=EC=A1=B0?=
+ =?UTF-8?q?=EA=B0=81=EB=B3=B4:=20=ED=98=95=ED=83=9C=2010=EA=B0=80=EC=A7=80?=
+ =?UTF-8?q?=EB=A5=BC=20=EA=B7=B8=20=EC=82=AC=EB=9E=8C=EC=9D=98=208?=
+ =?UTF-8?q?=EC=83=89=EC=9C=BC=EB=A1=9C=20=EB=AA=A8=EB=91=90=20=EB=B3=B4?=
+ =?UTF-8?q?=EC=97=AC=EC=A3=BC=EA=B3=A0=20=ED=95=98=EB=82=98=EB=A5=BC=20?=
+ =?UTF-8?q?=EA=B3=A8=EB=9D=BC=20=ED=81=AC=EA=B2=8C=20=EA=B7=B8=EB=A6=AC?=
+ =?UTF-8?q?=EA=B8=B0?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+- 바람개비·액자 넷·삼각 조각·로그캐빈·색동 띠·사분원 달·직조 체크·컬러 필드·부채·물결 띠
+- 미리보기와 큰 그림은 같은 함수(600 좌표)를 배율만 바꿔 그림, 회전·삼각 배치는 pattern_seed 로 결정
+- 고른 형태는 브라우저에 기억(localStorage, 실패해도 동작), PNG 다운로드도 고른 형태
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01MA6HLojYSgMbU3kiHDQXFK
+---
+ public/astral/astral.html          | 711 +++++++++++++++--------------
+ public/astral/css/astral.css       |  10 +
+ public/astral/js/astral-jogakbo.js | 191 ++++++--
+ public/astral/js/astral.js         |  48 +-
+ 4 files changed, 573 insertions(+), 387 deletions(-)
+
+diff --git a/public/astral/astral.html b/public/astral/astral.html
+index c278b8f..e719599 100644
+--- a/public/astral/astral.html
++++ b/public/astral/astral.html
+@@ -1,355 +1,356 @@
+-<!doctype html>
+-<html lang="ko">
+-<head>
+-  <meta charset="utf-8" />
+-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+-  <meta name="description" content="출생정보를 코드로 계산해 나의 일간과 Astral Color 고유색을 확인합니다." />
+-  <title>Astral Color | MaC</title>
+-  <link rel="icon" type="image/svg+xml" href="assets/astral-icon.svg" />
+-  <link rel="preconnect" href="https://fonts.googleapis.com" />
+-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,500;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Pretendard:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+-  <link rel="stylesheet" href="css/astral.css" />
+-  <script>/* MaC 프론트(color)에 합칠 때 추가: API 주소는 ?api= 로 받고, 탭 안(iframe)에서는 자체 헤더를 숨긴다 */
+-    window.ASTRAL_API_BASE = (new URLSearchParams(location.search).get('api') || '').replace(/\/$/, '');
+-    if (window.top !== window.self) document.documentElement.classList.add('embedded');
+-  </script>
+-  <style>.embedded .astral-header { display: none; }</style>
+-</head>
+-<body>
+-  <header class="astral-header">
+-    <a class="brand" href="/" target="_top" aria-label="MaC 메인으로 이동">
+-      <span class="brand-mark">MaC</span>
+-      <span class="brand-copy">Memory and Color</span>
+-    </a>
+-    <a class="back-link" href="/" target="_top">메인으로 돌아가기</a>
+-  </header>
+-
+-  <main>
+-    <section class="hero" aria-labelledby="astral-title">
+-      <p class="eyebrow">MaC Chromatic Archive No. 02</p>
+-      <h1 id="astral-title">Astral <em>Color</em></h1>
+-      <p class="hero-copy">
+-        출생정보를 전통 명리의 시간 기준으로 계산하고,<br />
+-        일간에 연결된 한 가지 고유색을 보여드립니다.
+-      </p>
+-      <div class="principle-row" aria-label="계산 원칙">
+-        <span>AI 추측 없음</span>
+-        <span>과거 한국 시간대 반영</span>
+-        <span>결과 규칙 버전 기록</span>
+-      </div>
+-    </section>
+-
+-    <section class="workspace" aria-label="Astral Color 무료 계산">
+-      <div class="form-panel">
+-        <div class="panel-heading">
+-          <div>
+-            <p class="step-label">Free Reading</p>
+-            <h2>출생정보를 알려주세요</h2>
+-          </div>
+-          <span class="support-badge">지원 출생연도&nbsp; 1948–2050</span>
+-        </div>
+-
+-        <form id="astralForm" novalidate>
+-          <fieldset class="field-group">
+-            <legend>달력 기준</legend>
+-            <div class="segmented-control">
+-              <label><input type="radio" name="calendarType" value="solar" checked /><span>양력</span></label>
+-              <label><input type="radio" name="calendarType" value="lunar" /><span>음력</span></label>
+-            </div>
+-          </fieldset>
+-
+-          <fieldset class="field-group lunar-only" id="leapMonthGroup" hidden>
+-            <legend>음력 월 구분</legend>
+-            <div class="segmented-control">
+-              <label><input type="radio" name="leapMonth" value="false" checked /><span>평달</span></label>
+-              <label><input type="radio" name="leapMonth" value="true" /><span>윤달</span></label>
+-            </div>
+-          </fieldset>
+-
+-          <fieldset class="field-group">
+-            <legend>생년월일</legend>
+-            <div class="date-grid">
+-              <label class="input-wrap">
+-                <span>연도</span>
+-                <input id="birthYear" name="birthYear" type="number" min="1948" max="2050" value="1995" inputmode="numeric" required />
+-              </label>
+-              <label class="input-wrap">
+-                <span>월</span>
+-                <select id="birthMonth" name="birthMonth" required></select>
+-              </label>
+-              <label class="input-wrap">
+-                <span>일</span>
+-                <select id="birthDay" name="birthDay" required></select>
+-              </label>
+-            </div>
+-          </fieldset>
+-
+-          <fieldset class="field-group">
+-            <legend>성별</legend>
+-            <div class="segmented-control">
+-              <label><input type="radio" name="gender" value="male" required /><span>남성</span></label>
+-              <label><input type="radio" name="gender" value="female" required /><span>여성</span></label>
+-            </div>
+-          </fieldset>
+-
+-          <div class="field-group">
+-            <div class="field-label-row">
+-              <label for="birthTime">출생 시각</label>
+-              <label class="check-label">
+-                <input type="checkbox" id="timeUnknown" />
+-                <span>시간을 몰라요</span>
+-              </label>
+-            </div>
+-            <input id="birthTime" class="standard-input" type="time" value="12:00" required />
+-            <p class="field-help">기록된 출생지 시계의 시각을 입력해 주세요.</p>
+-          </div>
+-
+-          <div class="field-group">
+-            <label for="birthCity">출생 지역 <span class="label-detail">(시·군)</span></label>
+-            <input
+-              id="birthCity"
+-              class="standard-input"
+-              type="text"
+-              list="koreanCitySuggestions"
+-              placeholder="예: 여수시, 강릉시"
+-              autocomplete="address-level2"
+-              maxlength="40"
+-              required
+-            />
+-            <datalist id="koreanCitySuggestions">
+-              <option value="서울특별시"></option><option value="부산광역시"></option>
+-              <option value="대구광역시"></option><option value="인천광역시"></option>
+-              <option value="광주광역시"></option><option value="대전광역시"></option>
+-              <option value="울산광역시"></option><option value="세종특별자치시"></option>
+-              <option value="수원시"></option><option value="고양시"></option>
+-              <option value="용인시"></option><option value="성남시"></option>
+-              <option value="춘천시"></option><option value="원주시"></option>
+-              <option value="강릉시"></option><option value="청주시"></option>
+-              <option value="충주시"></option><option value="천안시"></option>
+-              <option value="공주시"></option><option value="전주시"></option>
+-              <option value="군산시"></option><option value="익산시"></option>
+-              <option value="목포시"></option><option value="여수시"></option>
+-              <option value="순천시"></option><option value="나주시"></option>
+-              <option value="포항시"></option><option value="경주시"></option>
+-              <option value="구미시"></option><option value="창원시"></option>
+-              <option value="진주시"></option><option value="김해시"></option>
+-              <option value="제주시"></option><option value="서귀포시"></option>
+-            </datalist>
+-            <p class="field-help">대한민국 내 출생 당시 시·군을 입력해 주세요. 추천에 없는 지역도 직접 입력할 수 있습니다.</p>
+-          </div>
+-
+-          <div class="privacy-note">
+-            <span class="privacy-dot" aria-hidden="true"></span>
+-            <p><strong>무료 계산 정보는 저장하지 않습니다.</strong> 입력값은 결과 계산에만 사용하며, 이 화면을 닫으면 보관되지 않습니다.</p>
+-          </div>
+-
+-          <p class="form-error" id="formError" role="alert" hidden></p>
+-          <button class="primary-button" id="submitButton" type="submit">
+-            <span>나의 고유색 확인하기</span>
+-            <span aria-hidden="true">→</span>
+-          </button>
+-        </form>
+-      </div>
+-
+-      <aside class="preview-panel" aria-live="polite">
+-        <div class="empty-result" id="emptyResult">
+-          <div class="orb" aria-hidden="true"><span></span></div>
+-          <p class="step-label">Your Unique Color</p>
+-          <h2>아직 색을 기다리고 있어요</h2>
+-          <p>출생정보를 입력하면 일간에 연결된<br />고유색 한 가지를 무료로 보여드립니다.</p>
+-        </div>
+-
+-        <div class="loading-result" id="loadingResult" hidden>
+-          <div class="loading-ring" aria-hidden="true"></div>
+-          <p>달력과 절입 시각을 확인하고 있어요.</p>
+-        </div>
+-
+-        <article class="color-result" id="colorResult" hidden>
+-          <p class="step-label">Your Unique Color</p>
+-          <div class="color-swatch" id="colorSwatch">
+-            <span class="swatch-shine" aria-hidden="true"></span>
+-          </div>
+-          <div class="result-title-row">
+-            <div>
+-              <span class="day-master" id="dayMaster"></span>
+-              <h2 id="colorName"></h2>
+-            </div>
+-            <button class="hex-chip" id="hexChip" type="button" title="HEX 복사"></button>
+-          </div>
+-          <p class="result-description" id="resultDescription"></p>
+-
+-          <div class="notice-list" id="noticeList" hidden></div>
+-          <div class="boundary-card" id="boundaryCard" hidden>
+-            <div class="boundary-heading">
+-              <span>경계 확인</span>
+-              <strong>입력 시각에 따라 후보가 달라질 수 있어요</strong>
+-            </div>
+-            <div id="boundaryCandidates"></div>
+-          </div>
+-
+-          <p class="disclaimer" id="disclaimer"></p>
+-          <button class="secondary-button" id="resetButton" type="button">다른 정보로 다시 계산</button>
+-        </article>
+-      </aside>
+-    </section>
+-
+-    <section class="paid-preview" aria-labelledby="paid-title">
+-      <div class="paid-copy">
+-        <p class="eyebrow">Full Astral Report</p>
+-        <h2 id="paid-title">네 가지 색으로 읽는<br />나의 Astral Report</h2>
+-        <p>무료 결과에 사용한 출생정보로 기본 풀이, 네 가지 색, 오늘의 운세를 한 번에 확인합니다.</p>
+-      </div>
+-      <div class="paid-card">
+-        <div class="price-row"><span>유료 보고서</span><strong>1,000원</strong></div>
+-        <ul>
+-          <li>근거·강점·주의점·행동으로 읽는 5가지 상세 풀이</li>
+-          <li>오각형으로 보는 오행 컬러 스펙트럼</li>
+-          <li>고유색·재능색·관계색·균형색과 활용 가이드</li>
+-          <li>오행 면적비로 구성한 조각보 아트 PNG</li>
+-          <li>100점 만점 오늘의 운세</li>
+-          <li>결과 보관함에서 한 달 동안 다시 보기</li>
+-        </ul>
+-        <button id="paidStartButton" type="button" disabled>무료 결과 계산 후 열 수 있어요</button>
+-        <p class="paid-stage-note">현재 개발 단계에서는 실제 결제 없이 테스트 결제로 전체 흐름을 확인합니다.</p>
+-      </div>
+-    </section>
+-
+-    <section class="paid-report" id="paidReport" aria-labelledby="report-title" hidden>
+-      <header class="report-heading">
+-        <div>
+-          <p class="eyebrow">Your Full Astral Report</p>
+-          <h2 id="report-title">네 가지 색으로 읽는 나의 흐름</h2>
+-          <p id="reportMeta"></p>
+-        </div>
+-        <span class="test-badge">개발용 테스트 결제</span>
+-      </header>
+-
+-      <div class="report-section-heading pillar-heading">
+-        <p class="step-label">Celestial Four Pillars</p>
+-        <h3>색으로 읽는 나의 만세력</h3>
+-        <p class="section-intro">위는 천간, 아래는 지지입니다. 각 글자의 오행을 색으로 구분했어요.</p>
+-      </div>
+-      <div class="pillar-strip" id="reportPillars" aria-label="색으로 구분한 사주 원국"></div>
+-
+-      <article class="report-overview" id="reportOverview">
+-        <p class="step-label">Report Summary</p>
+-        <h3 id="overviewHeadline"></h3>
+-        <p id="overviewSummary"></p>
+-        <div class="overview-keywords" id="overviewKeywords"></div>
+-      </article>
+-
+-      <div class="report-section-heading">
+-        <p class="step-label">Detailed Reading</p>
+-        <h3>근거부터 행동까지 이어지는 다섯 가지 풀이</h3>
+-      </div>
+-      <div class="reading-grid" id="readingGrid"></div>
+-
+-      <div class="report-section-heading">
+-        <p class="step-label">Five Element Spectrum</p>
+-        <h3>나의 오행 컬러 스펙트럼</h3>
+-      </div>
+-      <div class="element-profile">
+-        <figure class="element-spectrum">
+-          <div id="elementSpectrum"></div>
+-          <figcaption id="spectrumScale"></figcaption>
+-        </figure>
+-        <div class="element-profile-copy">
+-          <p class="color-role">COLOR DIRECTION</p>
+-          <h4 id="elementHeadline"></h4>
+-          <p id="elementDescription"></p>
+-          <ul id="spectrumLegend" class="spectrum-legend" aria-label="오행별 개수와 비율"></ul>
+-          <p class="element-caution" id="elementNote"></p>
+-        </div>
+-      </div>
+-
+-      <section class="color-styling" aria-labelledby="styling-title">
+-        <div class="report-section-heading">
+-          <p class="step-label">My Color Styling</p>
+-          <h3 id="styling-title">나의 색을 일상에 더하는 방법</h3>
+-          <p class="section-intro">매일 곁에 둘 색과 상황에 따라 꺼낼 색을 나누어 보세요. 새로 사지 않아도, 이미 있는 물건의 비슷한 색부터 시작할 수 있어요.</p>
+-        </div>
+-        <div id="stylingGrid" class="styling-grid"></div>
+-        <p class="styling-note">색은 취향과 행동을 떠올리는 도구입니다. 운을 개선하거나 부족한 기운을 치료하는 처방이 아닙니다.</p>
+-      </section>
+-
+-      <div class="report-section-heading">
+-        <p class="step-label">Four Colors</p>
+-        <h3>당신의 Astral Color 조합</h3>
+-      </div>
+-      <div class="paid-color-grid" id="paidColorGrid"></div>
+-
+-      <div class="pattern-fortune-grid">
+-        <article class="pattern-card">
+-          <div class="card-topline">
+-            <div>
+-              <p class="step-label">My Chromatic Bojagi</p>
+-              <h3>나의 색을 잇는 조각보</h3>
+-              <p class="pattern-family" id="patternFamily"></p>
+-            </div>
+-            <button class="download-button" id="downloadPatternButton" type="button">PNG 다운로드</button>
+-          </div>
+-          <canvas id="patternCanvas" width="1600" height="2000" aria-label="개인 사주의 이미지용 오행 면적비로 만든 조각보 컬러 아트"></canvas>
+-          <div id="patternAreaLegend" class="pattern-area-legend" aria-label="조각보 오행 면적비"></div>
+-          <p id="compositionNote" class="card-note"></p>
+-          <p class="pattern-source-note">한국 조각보의 불규칙한 면 분할과 모시의 결, 쌈솔에서 영감을 받아 새로 그린 디지털 작품입니다.</p>
+-        </article>
+-
+-        <article class="fortune-card">
+-          <p class="step-label">Today in Korea</p>
+-          <div class="fortune-score-row">
+-            <strong id="fortuneScore">--</strong>
+-            <span>/ 100점</span>
+-          </div>
+-          <p class="fortune-score-basis" id="fortuneScoreBasis"></p>
+-          <h3 id="fortuneTheme"></h3>
+-          <p id="fortuneReading" class="fortune-reading"></p>
+-          <dl class="fortune-details">
+-            <div><dt>추천 행동</dt><dd id="fortuneAction"></dd></div>
+-            <div><dt>확인할 점</dt><dd id="fortuneCheck"></dd></div>
+-            <div><dt>오늘의 색</dt><dd id="fortuneColor"></dd></div>
+-          </dl>
+-          <p class="card-note" id="fortuneNotice"></p>
+-        </article>
+-      </div>
+-
+-      <div class="report-footer-note">
+-        <p id="paidDisclaimer"></p>
+-        <p><strong>보관 안내:</strong> 이 개발 버전은 결과를 현재 브라우저에 30일간 저장합니다. 정식 서비스에서는 로그인 보관함과 거래 기록을 분리해 연결해야 합니다.</p>
+-      </div>
+-    </section>
+-
+-    <section class="method-note" aria-label="서비스 안내">
+-      <p>계산과 HEX는 코드가 정합니다. 향후 AI는 승인된 근거를 쉬운 문장으로 설명하는 데만 사용하며, 계산값을 바꿀 수 없습니다.</p>
+-    </section>
+-  </main>
+-
+-  <dialog class="checkout-dialog" id="checkoutDialog" aria-labelledby="checkout-title">
+-    <form method="dialog" class="checkout-card">
+-      <button class="dialog-close" value="cancel" aria-label="닫기">×</button>
+-      <p class="eyebrow">Local Test Checkout</p>
+-      <h2 id="checkout-title">Astral Report</h2>
+-      <div class="checkout-price"><span>결제 금액</span><strong>1,000원</strong></div>
+-      <ul>
+-        <li>5가지 상세 풀이와 오행 컬러 지도</li>
+-        <li>컬러 4개 활용법과 조각보 아트 PNG</li>
+-        <li>오늘의 운세와 30일 브라우저 보관</li>
+-      </ul>
+-      <div class="test-payment-notice">
+-        <strong>실제 결제가 아닙니다.</strong>
+-        <span>카드번호를 받지 않고, 결제 완료 화면만 테스트합니다.</span>
+-      </div>
+-      <p class="checkout-error" id="checkoutError" role="alert" hidden></p>
+-      <button class="test-pay-button" id="testPayButton" type="button">테스트 결제 완료하기</button>
+-    </form>
+-  </dialog>
+-
+-  <footer>
+-    <span>MaC · Memory and Color</span>
+-    <span>Astral Color calculation version 0.1</span>
+-  </footer>
+-  <script src="js/astral-jogakbo.js" defer></script>
+-  <script src="js/astral-report-ui.js" defer></script>
+-  <script src="js/astral.js" defer></script>
+-</body>
+-</html>
++<!doctype html>
++<html lang="ko">
++<head>
++  <meta charset="utf-8" />
++  <meta name="viewport" content="width=device-width, initial-scale=1" />
++  <meta name="description" content="출생정보를 코드로 계산해 나의 일간과 Astral Color 고유색을 확인합니다." />
++  <title>Astral Color | MaC</title>
++  <link rel="icon" type="image/svg+xml" href="assets/astral-icon.svg" />
++  <link rel="preconnect" href="https://fonts.googleapis.com" />
++  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
++  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,500;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Pretendard:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
++  <link rel="stylesheet" href="css/astral.css" />
++  <script>/* MaC 프론트(color)에 합칠 때 추가: API 주소는 ?api= 로 받고, 탭 안(iframe)에서는 자체 헤더를 숨긴다 */
++    window.ASTRAL_API_BASE = (new URLSearchParams(location.search).get('api') || '').replace(/\/$/, '');
++    if (window.top !== window.self) document.documentElement.classList.add('embedded');
++  </script>
++  <style>.embedded .astral-header { display: none; }</style>
++</head>
++<body>
++  <header class="astral-header">
++    <a class="brand" href="/" target="_top" aria-label="MaC 메인으로 이동">
++      <span class="brand-mark">MaC</span>
++      <span class="brand-copy">Memory and Color</span>
++    </a>
++    <a class="back-link" href="/" target="_top">메인으로 돌아가기</a>
++  </header>
++
++  <main>
++    <section class="hero" aria-labelledby="astral-title">
++      <p class="eyebrow">MaC Chromatic Archive No. 02</p>
++      <h1 id="astral-title">Astral <em>Color</em></h1>
++      <p class="hero-copy">
++        출생정보를 전통 명리의 시간 기준으로 계산하고,<br />
++        일간에 연결된 한 가지 고유색을 보여드립니다.
++      </p>
++      <div class="principle-row" aria-label="계산 원칙">
++        <span>AI 추측 없음</span>
++        <span>과거 한국 시간대 반영</span>
++        <span>결과 규칙 버전 기록</span>
++      </div>
++    </section>
++
++    <section class="workspace" aria-label="Astral Color 무료 계산">
++      <div class="form-panel">
++        <div class="panel-heading">
++          <div>
++            <p class="step-label">Free Reading</p>
++            <h2>출생정보를 알려주세요</h2>
++          </div>
++          <span class="support-badge">지원 출생연도&nbsp; 1948–2050</span>
++        </div>
++
++        <form id="astralForm" novalidate>
++          <fieldset class="field-group">
++            <legend>달력 기준</legend>
++            <div class="segmented-control">
++              <label><input type="radio" name="calendarType" value="solar" checked /><span>양력</span></label>
++              <label><input type="radio" name="calendarType" value="lunar" /><span>음력</span></label>
++            </div>
++          </fieldset>
++
++          <fieldset class="field-group lunar-only" id="leapMonthGroup" hidden>
++            <legend>음력 월 구분</legend>
++            <div class="segmented-control">
++              <label><input type="radio" name="leapMonth" value="false" checked /><span>평달</span></label>
++              <label><input type="radio" name="leapMonth" value="true" /><span>윤달</span></label>
++            </div>
++          </fieldset>
++
++          <fieldset class="field-group">
++            <legend>생년월일</legend>
++            <div class="date-grid">
++              <label class="input-wrap">
++                <span>연도</span>
++                <input id="birthYear" name="birthYear" type="number" min="1948" max="2050" value="1995" inputmode="numeric" required />
++              </label>
++              <label class="input-wrap">
++                <span>월</span>
++                <select id="birthMonth" name="birthMonth" required></select>
++              </label>
++              <label class="input-wrap">
++                <span>일</span>
++                <select id="birthDay" name="birthDay" required></select>
++              </label>
++            </div>
++          </fieldset>
++
++          <fieldset class="field-group">
++            <legend>성별</legend>
++            <div class="segmented-control">
++              <label><input type="radio" name="gender" value="male" required /><span>남성</span></label>
++              <label><input type="radio" name="gender" value="female" required /><span>여성</span></label>
++            </div>
++          </fieldset>
++
++          <div class="field-group">
++            <div class="field-label-row">
++              <label for="birthTime">출생 시각</label>
++              <label class="check-label">
++                <input type="checkbox" id="timeUnknown" />
++                <span>시간을 몰라요</span>
++              </label>
++            </div>
++            <input id="birthTime" class="standard-input" type="time" value="12:00" required />
++            <p class="field-help">기록된 출생지 시계의 시각을 입력해 주세요.</p>
++          </div>
++
++          <div class="field-group">
++            <label for="birthCity">출생 지역 <span class="label-detail">(시·군)</span></label>
++            <input
++              id="birthCity"
++              class="standard-input"
++              type="text"
++              list="koreanCitySuggestions"
++              placeholder="예: 여수시, 강릉시"
++              autocomplete="address-level2"
++              maxlength="40"
++              required
++            />
++            <datalist id="koreanCitySuggestions">
++              <option value="서울특별시"></option><option value="부산광역시"></option>
++              <option value="대구광역시"></option><option value="인천광역시"></option>
++              <option value="광주광역시"></option><option value="대전광역시"></option>
++              <option value="울산광역시"></option><option value="세종특별자치시"></option>
++              <option value="수원시"></option><option value="고양시"></option>
++              <option value="용인시"></option><option value="성남시"></option>
++              <option value="춘천시"></option><option value="원주시"></option>
++              <option value="강릉시"></option><option value="청주시"></option>
++              <option value="충주시"></option><option value="천안시"></option>
++              <option value="공주시"></option><option value="전주시"></option>
++              <option value="군산시"></option><option value="익산시"></option>
++              <option value="목포시"></option><option value="여수시"></option>
++              <option value="순천시"></option><option value="나주시"></option>
++              <option value="포항시"></option><option value="경주시"></option>
++              <option value="구미시"></option><option value="창원시"></option>
++              <option value="진주시"></option><option value="김해시"></option>
++              <option value="제주시"></option><option value="서귀포시"></option>
++            </datalist>
++            <p class="field-help">대한민국 내 출생 당시 시·군을 입력해 주세요. 추천에 없는 지역도 직접 입력할 수 있습니다.</p>
++          </div>
++
++          <div class="privacy-note">
++            <span class="privacy-dot" aria-hidden="true"></span>
++            <p><strong>무료 계산 정보는 저장하지 않습니다.</strong> 입력값은 결과 계산에만 사용하며, 이 화면을 닫으면 보관되지 않습니다.</p>
++          </div>
++
++          <p class="form-error" id="formError" role="alert" hidden></p>
++          <button class="primary-button" id="submitButton" type="submit">
++            <span>나의 고유색 확인하기</span>
++            <span aria-hidden="true">→</span>
++          </button>
++        </form>
++      </div>
++
++      <aside class="preview-panel" aria-live="polite">
++        <div class="empty-result" id="emptyResult">
++          <div class="orb" aria-hidden="true"><span></span></div>
++          <p class="step-label">Your Unique Color</p>
++          <h2>아직 색을 기다리고 있어요</h2>
++          <p>출생정보를 입력하면 일간에 연결된<br />고유색 한 가지를 무료로 보여드립니다.</p>
++        </div>
++
++        <div class="loading-result" id="loadingResult" hidden>
++          <div class="loading-ring" aria-hidden="true"></div>
++          <p>달력과 절입 시각을 확인하고 있어요.</p>
++        </div>
++
++        <article class="color-result" id="colorResult" hidden>
++          <p class="step-label">Your Unique Color</p>
++          <div class="color-swatch" id="colorSwatch">
++            <span class="swatch-shine" aria-hidden="true"></span>
++          </div>
++          <div class="result-title-row">
++            <div>
++              <span class="day-master" id="dayMaster"></span>
++              <h2 id="colorName"></h2>
++            </div>
++            <button class="hex-chip" id="hexChip" type="button" title="HEX 복사"></button>
++          </div>
++          <p class="result-description" id="resultDescription"></p>
++
++          <div class="notice-list" id="noticeList" hidden></div>
++          <div class="boundary-card" id="boundaryCard" hidden>
++            <div class="boundary-heading">
++              <span>경계 확인</span>
++              <strong>입력 시각에 따라 후보가 달라질 수 있어요</strong>
++            </div>
++            <div id="boundaryCandidates"></div>
++          </div>
++
++          <p class="disclaimer" id="disclaimer"></p>
++          <button class="secondary-button" id="resetButton" type="button">다른 정보로 다시 계산</button>
++        </article>
++      </aside>
++    </section>
++
++    <section class="paid-preview" aria-labelledby="paid-title">
++      <div class="paid-copy">
++        <p class="eyebrow">Full Astral Report</p>
++        <h2 id="paid-title">네 가지 색으로 읽는<br />나의 Astral Report</h2>
++        <p>무료 결과에 사용한 출생정보로 기본 풀이, 네 가지 색, 오늘의 운세를 한 번에 확인합니다.</p>
++      </div>
++      <div class="paid-card">
++        <div class="price-row"><span>유료 보고서</span><strong>1,000원</strong></div>
++        <ul>
++          <li>근거·강점·주의점·행동으로 읽는 5가지 상세 풀이</li>
++          <li>오각형으로 보는 오행 컬러 스펙트럼</li>
++          <li>고유색·재능색·관계색·균형색과 활용 가이드</li>
++          <li>오행 면적비로 구성한 조각보 아트 PNG</li>
++          <li>100점 만점 오늘의 운세</li>
++          <li>결과 보관함에서 한 달 동안 다시 보기</li>
++        </ul>
++        <button id="paidStartButton" type="button" disabled>무료 결과 계산 후 열 수 있어요</button>
++        <p class="paid-stage-note">현재 개발 단계에서는 실제 결제 없이 테스트 결제로 전체 흐름을 확인합니다.</p>
++      </div>
++    </section>
++
++    <section class="paid-report" id="paidReport" aria-labelledby="report-title" hidden>
++      <header class="report-heading">
++        <div>
++          <p class="eyebrow">Your Full Astral Report</p>
++          <h2 id="report-title">네 가지 색으로 읽는 나의 흐름</h2>
++          <p id="reportMeta"></p>
++        </div>
++        <span class="test-badge">개발용 테스트 결제</span>
++      </header>
++
++      <div class="report-section-heading pillar-heading">
++        <p class="step-label">Celestial Four Pillars</p>
++        <h3>색으로 읽는 나의 만세력</h3>
++        <p class="section-intro">위는 천간, 아래는 지지입니다. 각 글자의 오행을 색으로 구분했어요.</p>
++      </div>
++      <div class="pillar-strip" id="reportPillars" aria-label="색으로 구분한 사주 원국"></div>
++
++      <article class="report-overview" id="reportOverview">
++        <p class="step-label">Report Summary</p>
++        <h3 id="overviewHeadline"></h3>
++        <p id="overviewSummary"></p>
++        <div class="overview-keywords" id="overviewKeywords"></div>
++      </article>
++
++      <div class="report-section-heading">
++        <p class="step-label">Detailed Reading</p>
++        <h3>근거부터 행동까지 이어지는 다섯 가지 풀이</h3>
++      </div>
++      <div class="reading-grid" id="readingGrid"></div>
++
++      <div class="report-section-heading">
++        <p class="step-label">Five Element Spectrum</p>
++        <h3>나의 오행 컬러 스펙트럼</h3>
++      </div>
++      <div class="element-profile">
++        <figure class="element-spectrum">
++          <div id="elementSpectrum"></div>
++          <figcaption id="spectrumScale"></figcaption>
++        </figure>
++        <div class="element-profile-copy">
++          <p class="color-role">COLOR DIRECTION</p>
++          <h4 id="elementHeadline"></h4>
++          <p id="elementDescription"></p>
++          <ul id="spectrumLegend" class="spectrum-legend" aria-label="오행별 개수와 비율"></ul>
++          <p class="element-caution" id="elementNote"></p>
++        </div>
++      </div>
++
++      <section class="color-styling" aria-labelledby="styling-title">
++        <div class="report-section-heading">
++          <p class="step-label">My Color Styling</p>
++          <h3 id="styling-title">나의 색을 일상에 더하는 방법</h3>
++          <p class="section-intro">매일 곁에 둘 색과 상황에 따라 꺼낼 색을 나누어 보세요. 새로 사지 않아도, 이미 있는 물건의 비슷한 색부터 시작할 수 있어요.</p>
++        </div>
++        <div id="stylingGrid" class="styling-grid"></div>
++        <p class="styling-note">색은 취향과 행동을 떠올리는 도구입니다. 운을 개선하거나 부족한 기운을 치료하는 처방이 아닙니다.</p>
++      </section>
++
++      <div class="report-section-heading">
++        <p class="step-label">Four Colors</p>
++        <h3>당신의 Astral Color 조합</h3>
++      </div>
++      <div class="paid-color-grid" id="paidColorGrid"></div>
++
++      <div class="pattern-fortune-grid">
++        <article class="pattern-card">
++          <div class="card-topline">
++            <div>
++              <p class="step-label">My Chromatic Bojagi</p>
++              <h3>나의 색을 잇는 조각보</h3>
++              <p class="pattern-family" id="patternFamily"></p>
++            </div>
++            <button class="download-button" id="downloadPatternButton" type="button">PNG 다운로드</button>
++          </div>
++          <div id="patternStylePicker" class="pattern-style-picker" role="radiogroup" aria-label="조각보 형태 고르기" hidden></div>
++          <canvas id="patternCanvas" width="1600" height="2000" aria-label="개인 사주의 이미지용 오행 면적비로 만든 조각보 컬러 아트"></canvas>
++          <div id="patternAreaLegend" class="pattern-area-legend" aria-label="조각보 오행 면적비"></div>
++          <p id="compositionNote" class="card-note"></p>
++          <p class="pattern-source-note">한국 조각보의 불규칙한 면 분할과 모시의 결, 쌈솔에서 영감을 받아 새로 그린 디지털 작품입니다.</p>
++        </article>
++
++        <article class="fortune-card">
++          <p class="step-label">Today in Korea</p>
++          <div class="fortune-score-row">
++            <strong id="fortuneScore">--</strong>
++            <span>/ 100점</span>
++          </div>
++          <p class="fortune-score-basis" id="fortuneScoreBasis"></p>
++          <h3 id="fortuneTheme"></h3>
++          <p id="fortuneReading" class="fortune-reading"></p>
++          <dl class="fortune-details">
++            <div><dt>추천 행동</dt><dd id="fortuneAction"></dd></div>
++            <div><dt>확인할 점</dt><dd id="fortuneCheck"></dd></div>
++            <div><dt>오늘의 색</dt><dd id="fortuneColor"></dd></div>
++          </dl>
++          <p class="card-note" id="fortuneNotice"></p>
++        </article>
++      </div>
++
++      <div class="report-footer-note">
++        <p id="paidDisclaimer"></p>
++        <p><strong>보관 안내:</strong> 이 개발 버전은 결과를 현재 브라우저에 30일간 저장합니다. 정식 서비스에서는 로그인 보관함과 거래 기록을 분리해 연결해야 합니다.</p>
++      </div>
++    </section>
++
++    <section class="method-note" aria-label="서비스 안내">
++      <p>계산과 HEX는 코드가 정합니다. 향후 AI는 승인된 근거를 쉬운 문장으로 설명하는 데만 사용하며, 계산값을 바꿀 수 없습니다.</p>
++    </section>
++  </main>
++
++  <dialog class="checkout-dialog" id="checkoutDialog" aria-labelledby="checkout-title">
++    <form method="dialog" class="checkout-card">
++      <button class="dialog-close" value="cancel" aria-label="닫기">×</button>
++      <p class="eyebrow">Local Test Checkout</p>
++      <h2 id="checkout-title">Astral Report</h2>
++      <div class="checkout-price"><span>결제 금액</span><strong>1,000원</strong></div>
++      <ul>
++        <li>5가지 상세 풀이와 오행 컬러 지도</li>
++        <li>컬러 4개 활용법과 조각보 아트 PNG</li>
++        <li>오늘의 운세와 30일 브라우저 보관</li>
++      </ul>
++      <div class="test-payment-notice">
++        <strong>실제 결제가 아닙니다.</strong>
++        <span>카드번호를 받지 않고, 결제 완료 화면만 테스트합니다.</span>
++      </div>
++      <p class="checkout-error" id="checkoutError" role="alert" hidden></p>
++      <button class="test-pay-button" id="testPayButton" type="button">테스트 결제 완료하기</button>
++    </form>
++  </dialog>
++
++  <footer>
++    <span>MaC · Memory and Color</span>
++    <span>Astral Color calculation version 0.1</span>
++  </footer>
++  <script src="js/astral-jogakbo.js" defer></script>
++  <script src="js/astral-report-ui.js" defer></script>
++  <script src="js/astral.js" defer></script>
++</body>
++</html>
+diff --git a/public/astral/css/astral.css b/public/astral/css/astral.css
+index 7c9b358..d1a5c17 100644
+--- a/public/astral/css/astral.css
++++ b/public/astral/css/astral.css
+@@ -499,3 +499,13 @@ button:focus-visible, summary:focus-visible { outline: 2px solid #967348; outlin
+ .pattern-chip-row b { width: 46px; color: #8a7c69; font-size: 11px; font-weight: 600; }
+ .pattern-chip-row span { display: flex; gap: 6px; align-items: center; color: #4f4537; font-size: 12px; }
+ .pattern-chip-row i { width: 16px; height: 16px; border-radius: 3px; box-shadow: inset 0 0 0 1px rgba(40,30,20,.16); }
++
++/* 조각보 형태 고르기: 10가지 미리보기 */
++.pattern-style-picker { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; margin: 18px 0 16px; }
++.pattern-style-option { display: grid; gap: 6px; padding: 6px; border: 1px solid #e4d9c7; border-radius: 8px; background: #fffdf8; color: #6f6354; font: inherit; font-size: 11px; cursor: pointer; transition: border-color .15s, box-shadow .15s, transform .15s; }
++.pattern-style-option canvas { display: block; width: 100%; height: auto; border-radius: 3px; }
++.pattern-style-option span { text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
++.pattern-style-option:hover { border-color: #c9b89c; transform: translateY(-1px); }
++.pattern-style-option[aria-checked="true"] { border-color: #3f3c39; box-shadow: 0 0 0 2px #3f3c39; color: #2e2a25; font-weight: 600; }
++.pattern-style-option:focus-visible { outline: 2px solid #91734f; outline-offset: 2px; }
++@media (max-width: 560px) { .pattern-style-picker { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+diff --git a/public/astral/js/astral-jogakbo.js b/public/astral/js/astral-jogakbo.js
+index cd7bc7b..0646c52 100644
+--- a/public/astral/js/astral-jogakbo.js
++++ b/public/astral/js/astral-jogakbo.js
+@@ -350,10 +350,168 @@
+     });
+   }
+ 
+-  function draw8(canvas, report) {
++
++  /* ── 조각보 형태 10가지 (2026-10-11, 팀 피드백: 격자 하나는 예쁘지 않다 → 사용자가 고른다) ──
++   * 모든 형태는 600×600 좌표에서 그린다. 큰 그림·작은 미리보기 모두 같은 함수를 배율만 바꿔 부른다.
++   * 색은 서버 palette8 그대로: B=고유색 4, C=보완색 4, N=조각용 무채색 3, W=가장 밝은 무채색. 선은 먹색. */
++  const S6 = 600;
++  function styleColors(p8) {
++    const patch = (p8.patch_neutrals || p8.neutrals.slice(0, 3)).map((n) => n.hex);
++    const white = patch.includes('#F3F0E9') ? '#F3F0E9' : patch[0];
++    return { B: p8.base.map((c) => c.hex), C: p8.complement.map((c) => c.hex), N: patch, W: white, INK: LINE_INK };
++  }
++  function weave(g, path) {
++    g.save();
++    g.clip(path);
++    for (let x = 0; x < S6; x += 4) { g.fillStyle = x % 12 < 4 ? 'rgba(255,255,255,.05)' : 'rgba(30,20,10,.03)'; g.fillRect(x, 0, .8, S6); }
++    for (let y = 0; y < S6; y += 5) { g.fillStyle = 'rgba(255,255,255,.05)'; g.fillRect(0, y, S6, .9); }
++    g.restore();
++  }
++  function patch6(g, path, color, P, seam = 5) {
++    g.fillStyle = color;
++    g.fill(path);
++    weave(g, path);
++    g.lineWidth = seam;
++    g.lineJoin = 'round';
++    g.strokeStyle = P.INK;
++    g.stroke(path);
++  }
++  function rect6(x, y, w, h) { const p = new Path2D(); p.rect(x, y, w, h); return p; }
++  function lum(hex) { const n = parseInt(hex.slice(1), 16); return .3 * (n >> 16) + .59 * ((n >> 8) & 255) + .11 * (n & 255); }
++
++  const STYLES = [
++    { key: 'pinwheel', name: '바람개비', desc: '가운데 고유색을 네 띠가 돌아가며 감싼다', turn: true, draw(g, P) {
++      const { B, C, N } = P; const a = S6 * .3; const m = (S6 - a) / 2; const h = m / 2;
++      [[[0, 0, m + a, h], [0, h, m + a, h]], [[S6 - h, 0, h, m + a], [m + a, 0, h, m + a]],
++        [[m, S6 - h, m + a, h], [m, m + a, m + a, h]], [[0, m, h, m + a], [h, m, h, m + a]]]
++        .forEach(([o, i], k) => { patch6(g, rect6(...o), B[(k + 1) % 4], P); patch6(g, rect6(...i), C[k], P); });
++      patch6(g, rect6(m, m, a, a), B[0], P);
++      const q = a * .36; patch6(g, rect6(m + (a - q) / 2, m + (a - q) / 2, q, q), N[2], P);
++    } },
++    { key: 'frames', name: '액자 넷', desc: '네 칸마다 고유색 → 보완색 → 무채색 액자', draw(g, P) {
++      const { B, C, N, W } = P; const h = S6 / 2;
++      [[0, 0], [h, 0], [0, h], [h, h]].forEach(([x, y], k) => {
++        patch6(g, rect6(x, y, h, h), B[k], P);
++        patch6(g, rect6(x + h * .17, y + h * .12, h * .66, h * .66), C[k], P);
++        patch6(g, rect6(x + h * .33, y + h * .24, h * .34, h * .34), [W, N[0], N[1], W][k], P);
++      });
++    } },
++    { key: 'triangles', name: '삼각 조각', desc: '삼각 조각 32개가 다이아몬드 무늬를 만든다', turn: true, draw(g, P, rand) {
++      const { B, C, N, W } = P; const n = 4; const c = S6 / n;
++      const pool = [...Array(6).fill(B[0]), ...Array(5).fill(B[1]), ...Array(5).fill(B[2]), ...Array(4).fill(B[3]), ...C, ...C, W, N[0], N[1], N[2]];
++      for (let i = pool.length - 1; i > 0; i -= 1) { const j = Math.floor(rand() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
++      let k = 0;
++      for (let y = 0; y < n; y += 1) for (let x = 0; x < n; x += 1) {
++        const X = x * c; const Y = y * c; const t1 = new Path2D(); const t2 = new Path2D();
++        if ((x + y) % 2) { t1.moveTo(X, Y); t1.lineTo(X + c, Y); t1.lineTo(X, Y + c); t2.moveTo(X + c, Y); t2.lineTo(X + c, Y + c); t2.lineTo(X, Y + c); }
++        else { t1.moveTo(X, Y); t1.lineTo(X + c, Y); t1.lineTo(X + c, Y + c); t2.moveTo(X, Y); t2.lineTo(X, Y + c); t2.lineTo(X + c, Y + c); }
++        t1.closePath(); t2.closePath();
++        patch6(g, t1, pool[k++], P, 4); patch6(g, t2, pool[k++], P, 4);
++      }
++    } },
++    { key: 'logcabin', name: '로그캐빈', desc: '가운데부터 띠를 감아 나간다. 밝은 색 위·오른쪽, 짙은 색 아래·왼쪽', turn: true, draw(g, P) {
++      const { B, C, N, W } = P;
++      const sorted = [...B.slice(0, 2), B[3], ...C, W, ...N].sort((a, b) => lum(b) - lum(a));
++      const light = sorted.slice(0, 6); const dark = sorted.slice(6);
++      const w = S6 / 7; let x = 3 * w; let y = 3 * w; let bw = w; let bh = w; let li = 0; let di = 0;
++      patch6(g, rect6(x, y, w, w), B[2], P);
++      for (let k = 0; k < 3; k += 1) {
++        patch6(g, rect6(x, y - w, bw, w), light[li++], P); y -= w; bh += w;
++        patch6(g, rect6(x + bw, y, w, bh), light[li++], P); bw += w;
++        patch6(g, rect6(x, y + bh, bw, w), dark[di++], P); bh += w;
++        patch6(g, rect6(x - w, y, w, bh), dark[di++], P); x -= w; bw += w;
++      }
++    } },
++    { key: 'saekdong', name: '색동 띠', desc: '색동저고리처럼 가로 띠, 사이사이 가는 무채색 띠', draw(g, P) {
++      const { B, C, N, W } = P;
++      const seq = [[B[0], 3], [C[2], 1.2], [W, .45], [B[2], 2.2], [C[1], 1.4], [N[1], .45], [B[1], 2.4], [C[0], 1.3], [W, .45], [B[3], 2.2], [C[3], 1.2], [N[2], .45], [B[0], 1.6]];
++      const total = seq.reduce((sum, item) => sum + item[1], 0); let y = 0;
++      seq.forEach(([color, weight]) => { const h = weight / total * S6; patch6(g, rect6(0, y, S6, h), color, P, 4); y += h; });
++    } },
++    { key: 'moon', name: '사분원 달', desc: '고유색 네 칸 위에 보완색 고리가 모여 보름달 하나', draw(g, P) {
++      const { B, C, N, W } = P; const h = S6 / 2;
++      [[0, 0], [h, 0], [h, h], [0, h]].forEach(([x, y], k) => {
++        patch6(g, rect6(x, y, h, h), B[k], P);
++        const a0 = [Math.PI, 1.5 * Math.PI, 0, .5 * Math.PI][k];
++        const ring = (r, color) => { const p = new Path2D(); p.moveTo(h, h); p.arc(h, h, r, a0, a0 + Math.PI / 2); p.closePath(); patch6(g, p, color, P); };
++        ring(h * .82, C[k]); ring(h * .5, [W, N[0], W, N[0]][k]); ring(h * .24, B[(k + 2) % 4]);
++      });
++    } },
++    { key: 'plaid', name: '직조 체크', desc: '고유색 가로 띠와 보완색 세로 띠를 겹쳐 짠 천', draw(g, P) {
++      const { B, C, W, INK } = P;
++      g.fillStyle = W; g.fillRect(0, 0, S6, S6); weave(g, rect6(0, 0, S6, S6));
++      g.globalCompositeOperation = 'multiply';
++      [[40, B[1], 80], [190, B[2], 60], [300, B[3], 110], [470, B[1], 50], [540, B[0], 40]].forEach(([y, c, h]) => { g.globalAlpha = .85; g.fillStyle = c; g.fillRect(0, y, S6, h); });
++      [[30, C[0], 70], [150, C[2], 40], [250, C[1], 120], [420, C[3], 60], [520, C[2], 30]].forEach(([x, c, w]) => { g.globalAlpha = .75; g.fillStyle = c; g.fillRect(x, 0, w, S6); });
++      g.globalAlpha = 1; g.globalCompositeOperation = 'source-over';
++      g.fillStyle = INK; [110, 262, 408, 520].forEach((v) => { g.fillRect(v, 0, 3, S6); g.fillRect(0, v - 40, S6, 3); });
++    } },
++    { key: 'field', name: '컬러 필드', desc: '큰 색면 셋이 번지듯 쌓인 차분한 그림', draw(g, P) {
++      const { B, C } = P; const ground = C[2];
++      g.fillStyle = ground; g.fillRect(0, 0, S6, S6); weave(g, rect6(0, 0, S6, S6));
++      const soft = (y, h, color, blur) => { g.save(); g.filter = `blur(${blur}px)`; g.fillStyle = color; g.fillRect(70, y, S6 - 140, h); g.restore(); };
++      soft(70, 150, B[3], 7); soft(245, 70, C[1], 7); soft(340, 190, B[2], 7); soft(555, 6, B[0], 4);
++    } },
++    { key: 'fan', name: '부채', desc: '한 모서리에서 부채살처럼 펼쳐진 조각', turn: true, draw(g, P) {
++      const { B, C, N, W } = P; const R1 = S6 * 1.42; const R2 = S6 * .62; const R3 = S6 * .26;
++      const outer = [B[0], C[0], B[1], C[1], B[2], C[2], B[3], C[3]]; const inner = [N[0], B[3], W, B[2], N[1], B[0], N[0], B[1]];
++      g.fillStyle = W; g.fillRect(0, 0, S6, S6);
++      for (let i = 0; i < 8; i += 1) {
++        const a0 = -Math.PI / 2 + i * (Math.PI / 16); const a1 = a0 + Math.PI / 16;
++        const p = new Path2D(); p.arc(0, S6, R1, a0, a1); p.arc(0, S6, R2, a1, a0, true); p.closePath(); patch6(g, p, outer[i], P);
++        const q = new Path2D(); q.arc(0, S6, R2, a0, a1); q.arc(0, S6, R3, a1, a0, true); q.closePath(); patch6(g, q, inner[i], P);
++      }
++      const c = new Path2D(); c.moveTo(0, S6); c.arc(0, S6, R3, -Math.PI / 2, 0); c.closePath(); patch6(g, c, C[2], P);
++    } },
++    { key: 'wave', name: '물결 띠', desc: '물결 모양 띠가 부드럽게 흐른다', draw(g, P) {
++      const { B, C, N, W } = P; const colors = [W, B[0], C[1], B[3], N[0], B[2], C[0], B[1], N[2], C[3], C[2]];
++      const n = colors.length; const bh = S6 / (n - 1);
++      const edge = (k) => { const pts = []; for (let x = -10; x <= S6 + 10; x += 10) pts.push([x, k * bh + Math.sin(x / 95 + k * .9) * bh * .38]); return pts; };
++      for (let k = 0; k < n; k += 1) {
++        const top = k === 0 ? [[-10, -10], [S6 + 10, -10]] : edge(k - 1);
++        const bottom = k === n - 1 ? [[-10, S6 + 10], [S6 + 10, S6 + 10]] : edge(k);
++        const p = new Path2D(); top.forEach(([x, y], i) => (i ? p.lineTo(x, y) : p.moveTo(x, y)));
++        [...bottom].reverse().forEach(([x, y]) => p.lineTo(x, y)); p.closePath(); patch6(g, p, colors[k], P, 4);
++      }
++    } },
++  ];
++
++  /* 형태 하나를 (x, y) 에 size 크기로 그린다. 사람마다 다르게: 삼각 배치·회전은 pattern_seed 로 정한다 (결정론). */
++  function drawStyleArt(context, report, styleKey, x, y, size) {
++    const style = STYLES.find((item) => item.key === styleKey) || STYLES[0];
++    const P = styleColors(report.palette8);
++    const seed = report.pattern_seed;
++    const turns = style.turn ? (parseInt(seed.slice(0, 2), 16) % 4) : 0;
++    context.save();
++    context.translate(x, y);
++    context.scale(size / S6, size / S6);
++    context.beginPath();
++    context.rect(0, 0, S6, S6);
++    context.clip();
++    context.translate(S6 / 2, S6 / 2);
++    context.rotate(turns * Math.PI / 2);
++    context.translate(-S6 / 2, -S6 / 2);
++    style.draw(context, P, seededRandom(seed));
++    context.restore();
++    context.save();
++    context.translate(x, y);
++    context.scale(size / S6, size / S6);
++    context.lineWidth = 14;
++    context.strokeStyle = LINE_INK;
++    context.strokeRect(7, 7, S6 - 14, S6 - 14);
++    context.restore();
++    return style;
++  }
++
++  function drawThumb(canvas, report, styleKey) {
++    const context = canvas.getContext('2d');
++    context.clearRect(0, 0, canvas.width, canvas.height);
++    drawStyleArt(context, report, styleKey, 0, 0, canvas.width);
++  }
++
++  function draw8(canvas, report, styleKey) {
+     const p8 = report.palette8;
+     const context = canvas.getContext('2d');
+-    const layout = buildLayout8(report);
+     const { width, height } = canvas;
+     const unit = width / 1600;
+     context.clearRect(0, 0, width, height);
+@@ -380,9 +538,6 @@
+     const artX = 120;
+     const artY = 316;
+     const artSize = 1360;
+-    const frame = 26;      // 바깥 둘레 (먹색)
+-    const seam = 12;       // 조각 사이 선 (먹색)
+-    const inner = artSize - frame * 2;
+     context.save();
+     context.shadowColor = 'rgba(60,45,30,.2)';
+     context.shadowBlur = 30;
+@@ -390,29 +545,11 @@
+     context.fillStyle = LINE_INK;
+     context.fillRect(artX, artY, artSize, artSize);
+     context.restore();
+-    layout.forEach((piece) => {
+-      const x0 = artX + frame + piece.x * inner;
+-      const y0 = artY + frame + piece.y * inner;
+-      const x1 = x0 + piece.width * inner;
+-      const y1 = y0 + piece.height * inner;
+-      const half = seam / 2;
+-      const left = piece.x === 0 ? 0 : half;
+-      const top = piece.y === 0 ? 0 : half;
+-      const right = piece.x + piece.width >= .999 ? 0 : half;
+-      const bottom = piece.y + piece.height >= .999 ? 0 : half;
+-      drawPatch(context, { x: x0 + left, y: y0 + top, width: x1 - x0 - left - right, height: y1 - y0 - top - bottom },
+-        slotColor(piece.slot, p8));
+-    });
+-    // 바깥 둘레 안쪽 바느질
+-    context.setLineDash([4, 6]);
+-    context.strokeStyle = 'rgba(255,255,255,.35)';
+-    context.lineWidth = 1.4;
+-    context.strokeRect(artX + 11, artY + 11, artSize - 22, artSize - 22);
+-    context.setLineDash([]);
++    const style = drawStyleArt(context, report, styleKey, artX, artY, artSize);
+ 
+     context.fillStyle = '#6f6354';
+     context.font = '27px Pretendard, Arial, sans-serif';
+-    context.fillText(report.pattern_family?.name || '나만의 조각보', 120, 1738);
++    context.fillText(`${style.name} 조각보`, 120, 1738);
+     context.textAlign = 'right';
+     context.fillStyle = '#9a8a75';
+     context.font = '23px Georgia, serif';
+@@ -425,10 +562,10 @@
+     const patchNames = (p8.patch_neutrals || p8.neutrals.slice(0, 3)).map((n) => n.name).join(' · ');
+     context.fillText(`무채색  ${patchNames} 조각 · 먹색 선   /   보완색 = 색상환 반대편, 명도를 원색에서 멀리`, 120, 1962);
+     context.restore();
+-    return { layout, palette8: p8 };
++    return { style, palette8: p8 };
+   }
+ 
+-  const api = { ELEMENTS, paletteForReport, buildLayout, draw, buildLayout8, draw8 };
++  const api = { ELEMENTS, paletteForReport, buildLayout, draw, buildLayout8, draw8, STYLES, drawThumb };
+   if (typeof module !== 'undefined' && module.exports) module.exports = api;
+   else root.AstralJogakbo = api;
+ }(typeof globalThis !== 'undefined' ? globalThis : this));
+diff --git a/public/astral/js/astral.js b/public/astral/js/astral.js
+index 4b162ee..75e2cd4 100644
+--- a/public/astral/js/astral.js
++++ b/public/astral/js/astral.js
+@@ -159,14 +159,52 @@ function hexAlpha(hex, alpha) {
+   return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
+ }
+ 
++const STYLE_STORAGE_KEY = 'mac-astral-jogakbo-style';
++function readStyleChoice() {
++  try { return localStorage.getItem(STYLE_STORAGE_KEY); } catch (error) { return null; }
++}
++function saveStyleChoice(key) {
++  try { localStorage.setItem(STYLE_STORAGE_KEY, key); } catch (error) { /* 저장 못 해도 화면은 그대로 */ }
++}
++
+ function drawPattern(report) {
+   const canvas = document.getElementById('patternCanvas');
+   const legend = document.getElementById('patternAreaLegend');
+   legend.innerHTML = '';
++  const picker = document.getElementById('patternStylePicker');
++  picker.innerHTML = '';
++  picker.hidden = !report.palette8;
+   if (report.palette8) {
+-    // 8색 조각보: 고유색 4 / 보완색 4 칩 (팀 피드백 2026-10-10)
+-    AstralJogakbo.draw8(canvas, report);
+-    document.querySelector('.pattern-source-note').textContent = '한국 조각보의 면 분할과 모시의 결, 쌈솔에서 영감을 받아 몬드리안식 고정 격자로 새로 그린 디지털 작품입니다.';
++    // 8색 조각보: 형태 10가지를 모두 그 사람의 색으로 보여주고, 고른 형태로 크게 그린다 (팀 피드백 2026-10-11)
++    let chosen = readStyleChoice();
++    if (!AstralJogakbo.STYLES.some((style) => style.key === chosen)) chosen = AstralJogakbo.STYLES[0].key;
++    const buttons = AstralJogakbo.STYLES.map((style, index) => {
++      const button = document.createElement('button');
++      button.type = 'button';
++      button.className = 'pattern-style-option';
++      button.setAttribute('role', 'radio');
++      button.dataset.style = style.key;
++      button.title = style.desc;
++      const thumb = document.createElement('canvas');
++      thumb.width = 240;
++      thumb.height = 240;
++      AstralJogakbo.drawThumb(thumb, report, style.key);
++      const label = document.createElement('span');
++      label.textContent = `${index + 1}. ${style.name}`;
++      button.append(thumb, label);
++      button.addEventListener('click', () => select(style.key));
++      picker.appendChild(button);
++      return button;
++    });
++    function select(key) {
++      chosen = key;
++      saveStyleChoice(key);
++      buttons.forEach((button) => button.setAttribute('aria-checked', String(button.dataset.style === key)));
++      const { style } = AstralJogakbo.draw8(canvas, report, key);
++      document.getElementById('patternFamily').textContent = `${style.name} · ${style.desc}`;
++    }
++    select(chosen);
++    document.querySelector('.pattern-source-note').textContent = '한국 조각보의 면 분할과 모시의 결, 쌈솔에서 영감을 받아 새로 그린 디지털 작품입니다. 형태는 고를 수 있고, 색은 사주 계산값 그대로입니다.';
+     [['고유색', report.palette8.base], ['보완색', report.palette8.complement]].forEach(([label, colors]) => {
+       const row = document.createElement('div');
+       row.className = 'pattern-chip-row';
+@@ -506,11 +544,11 @@ function renderPaidReport(report) {
+   renderStyling(report);
+   renderPaidColors(report.colors);
+   drawPattern(report);
+-  document.getElementById('patternFamily').textContent = `${report.pattern_family.name} · ${report.pattern_family.inspiration}`;
++  if (!report.palette8) document.getElementById('patternFamily').textContent = `${report.pattern_family.name} · ${report.pattern_family.inspiration}`;
+   renderFortune(report.today_fortune);
+   const counts = Object.entries(report.visual_composition).map(([element, count]) => `${element} ${count}`).join(' · ');
+   document.getElementById('compositionNote').textContent = report.palette8
+-    ? '조각 면적은 고정된 격자로 나누고, 큰 조각부터 고유색·재능색·관계색·균형색을 놓았습니다. 보완색 4개와 무채색 조각을 사이사이 섞고, 조각 사이 선은 먹색으로 감쌌습니다. 이미지용 구성이며 강약·용신 판단 수치는 아닙니다.'
++    ? '위의 10가지 형태 중 하나를 고르면 조각보가 그 형태로 바뀝니다. 고유색 4개와 보완색 4개, 무채색 조각을 섞고 조각 사이 선은 먹색으로 감쌌습니다. 이미지용 구성이며 강약·용신 판단 수치는 아닙니다.'
+     : `내부 패치 면적은 ${report.visual_slot_count}칸 오행 구성(${counts})의 비율을 따릅니다. 둘레와 바탕은 4색으로 연결합니다. 이미지용 비율이며 강약·용신 판단 수치는 아닙니다.`;
+   document.getElementById('paidDisclaimer').textContent = report.disclaimer;
+   document.querySelector('.test-badge').textContent = '개발용 테스트 결제';
+-- 
+2.43.0
+
