@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="출생정보를 코드로 계산해 나의 일간과 Astral Color 고유색을 확인합니다." />
+  <title>Astral Color | MaC</title>
+  <link rel="icon" type="image/svg+xml" href="assets/astral-icon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,500;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Pretendard:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/astral.css" />
+  <script>/* MaC 프론트(color)에 합칠 때 추가: API 주소는 ?api= 로 받고, 탭 안(iframe)에서는 자체 헤더를 숨긴다 */
+    window.ASTRAL_API_BASE = (new URLSearchParams(location.search).get('api') || '').replace(/\/$/, '');
+    if (window.top !== window.self) document.documentElement.classList.add('embedded');
+  </script>
+  <style>.embedded .astral-header { display: none; }</style>
+</head>
+<body>
+  <header class="astral-header">
+    <a class="brand" href="/" target="_top" aria-label="MaC 메인으로 이동">
+      <span class="brand-mark">MaC</span>
+      <span class="brand-copy">Memory and Color</span>
+    </a>
+    <a class="back-link" href="/" target="_top">메인으로 돌아가기</a>
+  </header>
+
+  <main>
+    <section class="hero" aria-labelledby="astral-title">
+      <p class="eyebrow">MaC Chromatic Archive No. 02</p>
+      <h1 id="astral-title">Astral <em>Color</em></h1>
+      <p class="hero-copy">
+        출생정보를 전통 명리의 시간 기준으로 계산하고,<br />
+        일간에 연결된 한 가지 고유색을 보여드립니다.
+      </p>
+      <div class="principle-row" aria-label="계산 원칙">
+        <span>AI 추측 없음</span>
+        <span>과거 한국 시간대 반영</span>
+        <span>결과 규칙 버전 기록</span>
+      </div>
+    </section>
+
+    <section class="workspace" aria-label="Astral Color 무료 계산">
+      <div class="form-panel">
+        <div class="panel-heading">
+          <div>
+            <p class="step-label">Free Reading</p>
+            <h2>출생정보를 알려주세요</h2>
+          </div>
+          <span class="support-badge">지원 출생연도&nbsp; 1948–2050</span>
+        </div>
+
+        <form id="astralForm" novalidate>
+          <fieldset class="field-group">
+            <legend>달력 기준</legend>
+            <div class="segmented-control">
+              <label><input type="radio" name="calendarType" value="solar" checked /><span>양력</span></label>
+              <label><input type="radio" name="calendarType" value="lunar" /><span>음력</span></label>
+            </div>
+          </fieldset>
+
+          <fieldset class="field-group lunar-only" id="leapMonthGroup" hidden>
+            <legend>음력 월 구분</legend>
+            <div class="segmented-control">
+              <label><input type="radio" name="leapMonth" value="false" checked /><span>평달</span></label>
+              <label><input type="radio" name="leapMonth" value="true" /><span>윤달</span></label>
+            </div>
+          </fieldset>
+
+          <fieldset class="field-group">
+            <legend>생년월일</legend>
+            <div class="date-grid">
+              <label class="input-wrap">
+                <span>연도</span>
+                <input id="birthYear" name="birthYear" type="number" min="1948" max="2050" value="1995" inputmode="numeric" required />
+              </label>
+              <label class="input-wrap">
+                <span>월</span>
+                <select id="birthMonth" name="birthMonth" required></select>
+              </label>
+              <label class="input-wrap">
+                <span>일</span>
+                <select id="birthDay" name="birthDay" required></select>
+              </label>
+            </div>
+          </fieldset>
+
+          <fieldset class="field-group">
+            <legend>성별</legend>
+            <div class="segmented-control">
+              <label><input type="radio" name="gender" value="male" required /><span>남성</span></label>
+              <label><input type="radio" name="gender" value="female" required /><span>여성</span></label>
+            </div>
+          </fieldset>
+
+          <div class="field-group">
+            <div class="field-label-row">
+              <label for="birthTime">출생 시각</label>
+              <label class="check-label">
+                <input type="checkbox" id="timeUnknown" />
+                <span>시간을 몰라요</span>
+              </label>
+            </div>
+            <input id="birthTime" class="standard-input" type="time" value="12:00" required />
+            <p class="field-help">기록된 출생지 시계의 시각을 입력해 주세요.</p>
+          </div>
+
+          <div class="field-group">
+            <label for="birthCity">출생 지역 <span class="label-detail">(시·군)</span></label>
+            <input
+              id="birthCity"
+              class="standard-input"
+              type="text"
+              list="koreanCitySuggestions"
+              placeholder="예: 여수시, 강릉시"
+              autocomplete="address-level2"
+              maxlength="40"
+              required
+            />
+            <datalist id="koreanCitySuggestions">
+              <option value="서울특별시"></option><option value="부산광역시"></option>
+              <option value="대구광역시"></option><option value="인천광역시"></option>
+              <option value="광주광역시"></option><option value="대전광역시"></option>
+              <option value="울산광역시"></option><option value="세종특별자치시"></option>
+              <option value="수원시"></option><option value="고양시"></option>
+              <option value="용인시"></option><option value="성남시"></option>
+              <option value="춘천시"></option><option value="원주시"></option>
+              <option value="강릉시"></option><option value="청주시"></option>
+              <option value="충주시"></option><option value="천안시"></option>
+              <option value="공주시"></option><option value="전주시"></option>
+              <option value="군산시"></option><option value="익산시"></option>
+              <option value="목포시"></option><option value="여수시"></option>
+              <option value="순천시"></option><option value="나주시"></option>
+              <option value="포항시"></option><option value="경주시"></option>
+              <option value="구미시"></option><option value="창원시"></option>
+              <option value="진주시"></option><option value="김해시"></option>
+              <option value="제주시"></option><option value="서귀포시"></option>
+            </datalist>
+            <p class="field-help">대한민국 내 출생 당시 시·군을 입력해 주세요. 추천에 없는 지역도 직접 입력할 수 있습니다.</p>
+          </div>
+
+          <div class="privacy-note">
+            <span class="privacy-dot" aria-hidden="true"></span>
+            <p><strong>무료 계산 정보는 저장하지 않습니다.</strong> 입력값은 결과 계산에만 사용하며, 이 화면을 닫으면 보관되지 않습니다.</p>
+          </div>
+
+          <p class="form-error" id="formError" role="alert" hidden></p>
+          <button class="primary-button" id="submitButton" type="submit">
+            <span>나의 고유색 확인하기</span>
+            <span aria-hidden="true">→</span>
+          </button>
+        </form>
+      </div>
+
+      <aside class="preview-panel" aria-live="polite">
+        <div class="empty-result" id="emptyResult">
+          <div class="orb" aria-hidden="true"><span></span></div>
+          <p class="step-label">Your Unique Color</p>
+          <h2>아직 색을 기다리고 있어요</h2>
+          <p>출생정보를 입력하면 일간에 연결된<br />고유색 한 가지를 무료로 보여드립니다.</p>
+        </div>
+
+        <div class="loading-result" id="loadingResult" hidden>
+          <div class="loading-ring" aria-hidden="true"></div>
+          <p>달력과 절입 시각을 확인하고 있어요.</p>
+        </div>
+
+        <article class="color-result" id="colorResult" hidden>
+          <p class="step-label">Your Unique Color</p>
+          <div class="color-swatch" id="colorSwatch">
+            <span class="swatch-shine" aria-hidden="true"></span>
+          </div>
+          <div class="result-title-row">
+            <div>
+              <span class="day-master" id="dayMaster"></span>
+              <h2 id="colorName"></h2>
+            </div>
+            <button class="hex-chip" id="hexChip" type="button" title="HEX 복사"></button>
+          </div>
+          <p class="result-description" id="resultDescription"></p>
+
+          <div class="notice-list" id="noticeList" hidden></div>
+          <div class="boundary-card" id="boundaryCard" hidden>
+            <div class="boundary-heading">
+              <span>경계 확인</span>
+              <strong>입력 시각에 따라 후보가 달라질 수 있어요</strong>
+            </div>
+            <div id="boundaryCandidates"></div>
+          </div>
+
+          <p class="disclaimer" id="disclaimer"></p>
+          <button class="secondary-button" id="resetButton" type="button">다른 정보로 다시 계산</button>
+        </article>
+      </aside>
+    </section>
+
+    <section class="paid-preview" aria-labelledby="paid-title">
+      <div class="paid-copy">
+        <p class="eyebrow">Full Astral Report</p>
+        <h2 id="paid-title">네 가지 색으로 읽는<br />나의 Astral Report</h2>
+        <p>무료 결과에 사용한 출생정보로 기본 풀이, 네 가지 색, 오늘의 운세를 한 번에 확인합니다.</p>
+      </div>
+      <div class="paid-card">
+        <div class="price-row"><span>유료 보고서</span><strong>1,000원</strong></div>
+        <ul>
+          <li>근거·강점·주의점·행동으로 읽는 5가지 상세 풀이</li>
+          <li>오각형으로 보는 오행 컬러 스펙트럼</li>
+          <li>고유색·재능색·관계색·균형색과 활용 가이드</li>
+          <li>오행 면적비로 구성한 조각보 아트 PNG</li>
+          <li>100점 만점 오늘의 운세</li>
+          <li>결과 보관함에서 한 달 동안 다시 보기</li>
+        </ul>
+        <button id="paidStartButton" type="button" disabled>무료 결과 계산 후 열 수 있어요</button>
+        <p class="paid-stage-note">현재 개발 단계에서는 실제 결제 없이 테스트 결제로 전체 흐름을 확인합니다.</p>
+      </div>
+    </section>
+
+    <section class="paid-report" id="paidReport" aria-labelledby="report-title" hidden>
+      <header class="report-heading">
+        <div>
+          <p class="eyebrow">Your Full Astral Report</p>
+          <h2 id="report-title">네 가지 색으로 읽는 나의 흐름</h2>
+          <p id="reportMeta"></p>
+        </div>
+        <span class="test-badge">개발용 테스트 결제</span>
+      </header>
+
+      <div class="report-section-heading pillar-heading">
+        <p class="step-label">Celestial Four Pillars</p>
+        <h3>색으로 읽는 나의 만세력</h3>
+        <p class="section-intro">위는 천간, 아래는 지지입니다. 각 글자의 오행을 색으로 구분했어요.</p>
+      </div>
+      <div class="pillar-strip" id="reportPillars" aria-label="색으로 구분한 사주 원국"></div>
+
+      <article class="report-overview" id="reportOverview">
+        <p class="step-label">Report Summary</p>
+        <h3 id="overviewHeadline"></h3>
+        <p id="overviewSummary"></p>
+        <div class="overview-keywords" id="overviewKeywords"></div>
+      </article>
+
+      <div class="report-section-heading">
+        <p class="step-label">Detailed Reading</p>
+        <h3>근거부터 행동까지 이어지는 다섯 가지 풀이</h3>
+      </div>
+      <div class="reading-grid" id="readingGrid"></div>
+
+      <div class="report-section-heading">
+        <p class="step-label">Five Element Spectrum</p>
+        <h3>나의 오행 컬러 스펙트럼</h3>
+      </div>
+      <div class="element-profile">
+        <figure class="element-spectrum">
+          <div id="elementSpectrum"></div>
+          <figcaption id="spectrumScale"></figcaption>
+        </figure>
+        <div class="element-profile-copy">
+          <p class="color-role">COLOR DIRECTION</p>
+          <h4 id="elementHeadline"></h4>
+          <p id="elementDescription"></p>
+          <ul id="spectrumLegend" class="spectrum-legend" aria-label="오행별 개수와 비율"></ul>
+          <p class="element-caution" id="elementNote"></p>
+        </div>
+      </div>
+
+      <section class="color-styling" aria-labelledby="styling-title">
+        <div class="report-section-heading">
+          <p class="step-label">My Color Styling</p>
+          <h3 id="styling-title">나의 색을 일상에 더하는 방법</h3>
+          <p class="section-intro">매일 곁에 둘 색과 상황에 따라 꺼낼 색을 나누어 보세요. 새로 사지 않아도, 이미 있는 물건의 비슷한 색부터 시작할 수 있어요.</p>
+        </div>
+        <div id="stylingGrid" class="styling-grid"></div>
+        <p class="styling-note">색은 취향과 행동을 떠올리는 도구입니다. 운을 개선하거나 부족한 기운을 치료하는 처방이 아닙니다.</p>
+      </section>
+
+      <div class="report-section-heading">
+        <p class="step-label">Four Colors</p>
+        <h3>당신의 Astral Color 조합</h3>
+      </div>
+      <div class="paid-color-grid" id="paidColorGrid"></div>
+
+      <div class="pattern-fortune-grid">
+        <article class="pattern-card">
+          <div class="card-topline">
+            <div>
+              <p class="step-label">My Chromatic Bojagi</p>
+              <h3>나의 색을 잇는 조각보</h3>
+              <p class="pattern-family" id="patternFamily"></p>
+            </div>
+            <button class="download-button" id="downloadPatternButton" type="button">PNG 다운로드</button>
+          </div>
+          <canvas id="patternCanvas" width="1600" height="2000" aria-label="개인 사주의 이미지용 오행 면적비로 만든 조각보 컬러 아트"></canvas>
+          <div id="patternAreaLegend" class="pattern-area-legend" aria-label="조각보 오행 면적비"></div>
+          <p id="compositionNote" class="card-note"></p>
+          <p class="pattern-source-note">한국 조각보의 불규칙한 면 분할과 모시의 결, 쌈솔에서 영감을 받아 새로 그린 디지털 작품입니다.</p>
+        </article>
+
+        <article class="fortune-card">
+          <p class="step-label">Today in Korea</p>
+          <div class="fortune-score-row">
+            <strong id="fortuneScore">--</strong>
+            <span>/ 100점</span>
+          </div>
+          <p class="fortune-score-basis" id="fortuneScoreBasis"></p>
+          <h3 id="fortuneTheme"></h3>
+          <p id="fortuneReading" class="fortune-reading"></p>
+          <dl class="fortune-details">
+            <div><dt>추천 행동</dt><dd id="fortuneAction"></dd></div>
+            <div><dt>확인할 점</dt><dd id="fortuneCheck"></dd></div>
+            <div><dt>오늘의 색</dt><dd id="fortuneColor"></dd></div>
+          </dl>
+          <p class="card-note" id="fortuneNotice"></p>
+        </article>
+      </div>
+
+      <div class="report-footer-note">
+        <p id="paidDisclaimer"></p>
+        <p><strong>보관 안내:</strong> 이 개발 버전은 결과를 현재 브라우저에 30일간 저장합니다. 정식 서비스에서는 로그인 보관함과 거래 기록을 분리해 연결해야 합니다.</p>
+      </div>
+    </section>
+
+    <section class="method-note" aria-label="서비스 안내">
+      <p>계산과 HEX는 코드가 정합니다. 향후 AI는 승인된 근거를 쉬운 문장으로 설명하는 데만 사용하며, 계산값을 바꿀 수 없습니다.</p>
+    </section>
+  </main>
+
+  <dialog class="checkout-dialog" id="checkoutDialog" aria-labelledby="checkout-title">
+    <form method="dialog" class="checkout-card">
+      <button class="dialog-close" value="cancel" aria-label="닫기">×</button>
+      <p class="eyebrow">Local Test Checkout</p>
+      <h2 id="checkout-title">Astral Report</h2>
+      <div class="checkout-price"><span>결제 금액</span><strong>1,000원</strong></div>
+      <ul>
+        <li>5가지 상세 풀이와 오행 컬러 지도</li>
+        <li>컬러 4개 활용법과 조각보 아트 PNG</li>
+        <li>오늘의 운세와 30일 브라우저 보관</li>
+      </ul>
+      <div class="test-payment-notice">
+        <strong>실제 결제가 아닙니다.</strong>
+        <span>카드번호를 받지 않고, 결제 완료 화면만 테스트합니다.</span>
+      </div>
+      <p class="checkout-error" id="checkoutError" role="alert" hidden></p>
+      <button class="test-pay-button" id="testPayButton" type="button">테스트 결제 완료하기</button>
+    </form>
+  </dialog>
+
+  <footer>
+    <span>MaC · Memory and Color</span>
+    <span>Astral Color calculation version 0.1</span>
+  </footer>
+  <script src="js/astral-jogakbo.js" defer></script>
+  <script src="js/astral-report-ui.js" defer></script>
+  <script src="js/astral.js" defer></script>
+</body>
+</html>

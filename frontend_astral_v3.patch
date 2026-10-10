@@ -1,0 +1,2287 @@
+diff --git a/public/astral/assets/astral-icon.svg b/public/astral/assets/astral-icon.svg
+new file mode 100644
+index 0000000..726bd9c
+--- /dev/null
++++ b/public/astral/assets/astral-icon.svg
+@@ -0,0 +1,7 @@
++<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
++  <rect width="64" height="64" rx="13" fill="#faf7f0"/>
++  <path d="M10 10h27v25H10z" fill="#CBB79B"/>
++  <path d="M39 10h15v34H39z" fill="#DBA09A"/>
++  <path d="M10 37h27v17H10z" fill="#426B50"/>
++  <path d="M39 46h15v8H39z" fill="#D6A277"/>
++</svg>
+diff --git a/public/astral/astral.html b/public/astral/astral.html
+new file mode 100644
+index 0000000..c278b8f
+--- /dev/null
++++ b/public/astral/astral.html
+@@ -0,0 +1,355 @@
++<!doctype html>
++<html lang="ko">
++<head>
++  <meta charset="utf-8" />
++  <meta name="viewport" content="width=device-width, initial-scale=1" />
++  <meta name="description" content="출생정보를 코드로 계산해 나의 일간과 Astral Color 고유색을 확인합니다." />
++  <title>Astral Color | MaC</title>
++  <link rel="icon" type="image/svg+xml" href="assets/astral-icon.svg" />
++  <link rel="preconnect" href="https://fonts.googleapis.com" />
++  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
++  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,500;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Pretendard:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
++  <link rel="stylesheet" href="css/astral.css" />
++  <script>/* MaC 프론트(color)에 합칠 때 추가: API 주소는 ?api= 로 받고, 탭 안(iframe)에서는 자체 헤더를 숨긴다 */
++    window.ASTRAL_API_BASE = (new URLSearchParams(location.search).get('api') || '').replace(/\/$/, '');
++    if (window.top !== window.self) document.documentElement.classList.add('embedded');
++  </script>
++  <style>.embedded .astral-header { display: none; }</style>
++</head>
++<body>
++  <header class="astral-header">
++    <a class="brand" href="/" target="_top" aria-label="MaC 메인으로 이동">
++      <span class="brand-mark">MaC</span>
++      <span class="brand-copy">Memory and Color</span>
++    </a>
++    <a class="back-link" href="/" target="_top">메인으로 돌아가기</a>
++  </header>
++
++  <main>
++    <section class="hero" aria-labelledby="astral-title">
++      <p class="eyebrow">MaC Chromatic Archive No. 02</p>
++      <h1 id="astral-title">Astral <em>Color</em></h1>
++      <p class="hero-copy">
++        출생정보를 전통 명리의 시간 기준으로 계산하고,<br />
++        일간에 연결된 한 가지 고유색을 보여드립니다.
++      </p>
++      <div class="principle-row" aria-label="계산 원칙">
++        <span>AI 추측 없음</span>
++        <span>과거 한국 시간대 반영</span>
++        <span>결과 규칙 버전 기록</span>
++      </div>
++    </section>
++
++    <section class="workspace" aria-label="Astral Color 무료 계산">
++      <div class="form-panel">
++        <div class="panel-heading">
++          <div>
++            <p class="step-label">Free Reading</p>
++            <h2>출생정보를 알려주세요</h2>
++          </div>
++          <span class="support-badge">지원 출생연도&nbsp; 1948–2050</span>
++        </div>
++
++        <form id="astralForm" novalidate>
++          <fieldset class="field-group">
++            <legend>달력 기준</legend>
++            <div class="segmented-control">
++              <label><input type="radio" name="calendarType" value="solar" checked /><span>양력</span></label>
++              <label><input type="radio" name="calendarType" value="lunar" /><span>음력</span></label>
++            </div>
++          </fieldset>
++
++          <fieldset class="field-group lunar-only" id="leapMonthGroup" hidden>
++            <legend>음력 월 구분</legend>
++            <div class="segmented-control">
++              <label><input type="radio" name="leapMonth" value="false" checked /><span>평달</span></label>
++              <label><input type="radio" name="leapMonth" value="true" /><span>윤달</span></label>
++            </div>
++          </fieldset>
++
++          <fieldset class="field-group">
++            <legend>생년월일</legend>
++            <div class="date-grid">
++              <label class="input-wrap">
++                <span>연도</span>
++                <input id="birthYear" name="birthYear" type="number" min="1948" max="2050" value="1995" inputmode="numeric" required />
++              </label>
++              <label class="input-wrap">
++                <span>월</span>
++                <select id="birthMonth" name="birthMonth" required></select>
++              </label>
++              <label class="input-wrap">
++                <span>일</span>
++                <select id="birthDay" name="birthDay" required></select>
++              </label>
++            </div>
++          </fieldset>
++
++          <fieldset class="field-group">
++            <legend>성별</legend>
++            <div class="segmented-control">
++              <label><input type="radio" name="gender" value="male" required /><span>남성</span></label>
++              <label><input type="radio" name="gender" value="female" required /><span>여성</span></label>
++            </div>
++          </fieldset>
++
++          <div class="field-group">
++            <div class="field-label-row">
++              <label for="birthTime">출생 시각</label>
++              <label class="check-label">
++                <input type="checkbox" id="timeUnknown" />
++                <span>시간을 몰라요</span>
++              </label>
++            </div>
++            <input id="birthTime" class="standard-input" type="time" value="12:00" required />
++            <p class="field-help">기록된 출생지 시계의 시각을 입력해 주세요.</p>
++          </div>
++
++          <div class="field-group">
++            <label for="birthCity">출생 지역 <span class="label-detail">(시·군)</span></label>
++            <input
++              id="birthCity"
++              class="standard-input"
++              type="text"
++              list="koreanCitySuggestions"
++              placeholder="예: 여수시, 강릉시"
++              autocomplete="address-level2"
++              maxlength="40"
++              required
++            />
++            <datalist id="koreanCitySuggestions">
++              <option value="서울특별시"></option><option value="부산광역시"></option>
++              <option value="대구광역시"></option><option value="인천광역시"></option>
++              <option value="광주광역시"></option><option value="대전광역시"></option>
++              <option value="울산광역시"></option><option value="세종특별자치시"></option>
++              <option value="수원시"></option><option value="고양시"></option>
++              <option value="용인시"></option><option value="성남시"></option>
++              <option value="춘천시"></option><option value="원주시"></option>
++              <option value="강릉시"></option><option value="청주시"></option>
++              <option value="충주시"></option><option value="천안시"></option>
++              <option value="공주시"></option><option value="전주시"></option>
++              <option value="군산시"></option><option value="익산시"></option>
++              <option value="목포시"></option><option value="여수시"></option>
++              <option value="순천시"></option><option value="나주시"></option>
++              <option value="포항시"></option><option value="경주시"></option>
++              <option value="구미시"></option><option value="창원시"></option>
++              <option value="진주시"></option><option value="김해시"></option>
++              <option value="제주시"></option><option value="서귀포시"></option>
++            </datalist>
++            <p class="field-help">대한민국 내 출생 당시 시·군을 입력해 주세요. 추천에 없는 지역도 직접 입력할 수 있습니다.</p>
++          </div>
++
++          <div class="privacy-note">
++            <span class="privacy-dot" aria-hidden="true"></span>
++            <p><strong>무료 계산 정보는 저장하지 않습니다.</strong> 입력값은 결과 계산에만 사용하며, 이 화면을 닫으면 보관되지 않습니다.</p>
++          </div>
++
++          <p class="form-error" id="formError" role="alert" hidden></p>
++          <button class="primary-button" id="submitButton" type="submit">
++            <span>나의 고유색 확인하기</span>
++            <span aria-hidden="true">→</span>
++          </button>
++        </form>
++      </div>
++
++      <aside class="preview-panel" aria-live="polite">
++        <div class="empty-result" id="emptyResult">
++          <div class="orb" aria-hidden="true"><span></span></div>
++          <p class="step-label">Your Unique Color</p>
++          <h2>아직 색을 기다리고 있어요</h2>
++          <p>출생정보를 입력하면 일간에 연결된<br />고유색 한 가지를 무료로 보여드립니다.</p>
++        </div>
++
++        <div class="loading-result" id="loadingResult" hidden>
++          <div class="loading-ring" aria-hidden="true"></div>
++          <p>달력과 절입 시각을 확인하고 있어요.</p>
++        </div>
++
++        <article class="color-result" id="colorResult" hidden>
++          <p class="step-label">Your Unique Color</p>
++          <div class="color-swatch" id="colorSwatch">
++            <span class="swatch-shine" aria-hidden="true"></span>
++          </div>
++          <div class="result-title-row">
++            <div>
++              <span class="day-master" id="dayMaster"></span>
++              <h2 id="colorName"></h2>
++            </div>
++            <button class="hex-chip" id="hexChip" type="button" title="HEX 복사"></button>
++          </div>
++          <p class="result-description" id="resultDescription"></p>
++
++          <div class="notice-list" id="noticeList" hidden></div>
++          <div class="boundary-card" id="boundaryCard" hidden>
++            <div class="boundary-heading">
++              <span>경계 확인</span>
++              <strong>입력 시각에 따라 후보가 달라질 수 있어요</strong>
++            </div>
++            <div id="boundaryCandidates"></div>
++          </div>
++
++          <p class="disclaimer" id="disclaimer"></p>
++          <button class="secondary-button" id="resetButton" type="button">다른 정보로 다시 계산</button>
++        </article>
++      </aside>
++    </section>
++
++    <section class="paid-preview" aria-labelledby="paid-title">
++      <div class="paid-copy">
++        <p class="eyebrow">Full Astral Report</p>
++        <h2 id="paid-title">네 가지 색으로 읽는<br />나의 Astral Report</h2>
++        <p>무료 결과에 사용한 출생정보로 기본 풀이, 네 가지 색, 오늘의 운세를 한 번에 확인합니다.</p>
++      </div>
++      <div class="paid-card">
++        <div class="price-row"><span>유료 보고서</span><strong>1,000원</strong></div>
++        <ul>
++          <li>근거·강점·주의점·행동으로 읽는 5가지 상세 풀이</li>
++          <li>오각형으로 보는 오행 컬러 스펙트럼</li>
++          <li>고유색·재능색·관계색·균형색과 활용 가이드</li>
++          <li>오행 면적비로 구성한 조각보 아트 PNG</li>
++          <li>100점 만점 오늘의 운세</li>
++          <li>결과 보관함에서 한 달 동안 다시 보기</li>
++        </ul>
++        <button id="paidStartButton" type="button" disabled>무료 결과 계산 후 열 수 있어요</button>
++        <p class="paid-stage-note">현재 개발 단계에서는 실제 결제 없이 테스트 결제로 전체 흐름을 확인합니다.</p>
++      </div>
++    </section>
++
++    <section class="paid-report" id="paidReport" aria-labelledby="report-title" hidden>
++      <header class="report-heading">
++        <div>
++          <p class="eyebrow">Your Full Astral Report</p>
++          <h2 id="report-title">네 가지 색으로 읽는 나의 흐름</h2>
++          <p id="reportMeta"></p>
++        </div>
++        <span class="test-badge">개발용 테스트 결제</span>
++      </header>
++
++      <div class="report-section-heading pillar-heading">
++        <p class="step-label">Celestial Four Pillars</p>
++        <h3>색으로 읽는 나의 만세력</h3>
++        <p class="section-intro">위는 천간, 아래는 지지입니다. 각 글자의 오행을 색으로 구분했어요.</p>
++      </div>
++      <div class="pillar-strip" id="reportPillars" aria-label="색으로 구분한 사주 원국"></div>
++
++      <article class="report-overview" id="reportOverview">
++        <p class="step-label">Report Summary</p>
++        <h3 id="overviewHeadline"></h3>
++        <p id="overviewSummary"></p>
++        <div class="overview-keywords" id="overviewKeywords"></div>
++      </article>
++
++      <div class="report-section-heading">
++        <p class="step-label">Detailed Reading</p>
++        <h3>근거부터 행동까지 이어지는 다섯 가지 풀이</h3>
++      </div>
++      <div class="reading-grid" id="readingGrid"></div>
++
++      <div class="report-section-heading">
++        <p class="step-label">Five Element Spectrum</p>
++        <h3>나의 오행 컬러 스펙트럼</h3>
++      </div>
++      <div class="element-profile">
++        <figure class="element-spectrum">
++          <div id="elementSpectrum"></div>
++          <figcaption id="spectrumScale"></figcaption>
++        </figure>
++        <div class="element-profile-copy">
++          <p class="color-role">COLOR DIRECTION</p>
++          <h4 id="elementHeadline"></h4>
++          <p id="elementDescription"></p>
++          <ul id="spectrumLegend" class="spectrum-legend" aria-label="오행별 개수와 비율"></ul>
++          <p class="element-caution" id="elementNote"></p>
++        </div>
++      </div>
++
++      <section class="color-styling" aria-labelledby="styling-title">
++        <div class="report-section-heading">
++          <p class="step-label">My Color Styling</p>
++          <h3 id="styling-title">나의 색을 일상에 더하는 방법</h3>
++          <p class="section-intro">매일 곁에 둘 색과 상황에 따라 꺼낼 색을 나누어 보세요. 새로 사지 않아도, 이미 있는 물건의 비슷한 색부터 시작할 수 있어요.</p>
++        </div>
++        <div id="stylingGrid" class="styling-grid"></div>
++        <p class="styling-note">색은 취향과 행동을 떠올리는 도구입니다. 운을 개선하거나 부족한 기운을 치료하는 처방이 아닙니다.</p>
++      </section>
++
++      <div class="report-section-heading">
++        <p class="step-label">Four Colors</p>
++        <h3>당신의 Astral Color 조합</h3>
++      </div>
++      <div class="paid-color-grid" id="paidColorGrid"></div>
++
++      <div class="pattern-fortune-grid">
++        <article class="pattern-card">
++          <div class="card-topline">
++            <div>
++              <p class="step-label">My Chromatic Bojagi</p>
++              <h3>나의 색을 잇는 조각보</h3>
++              <p class="pattern-family" id="patternFamily"></p>
++            </div>
++            <button class="download-button" id="downloadPatternButton" type="button">PNG 다운로드</button>
++          </div>
++          <canvas id="patternCanvas" width="1600" height="2000" aria-label="개인 사주의 이미지용 오행 면적비로 만든 조각보 컬러 아트"></canvas>
++          <div id="patternAreaLegend" class="pattern-area-legend" aria-label="조각보 오행 면적비"></div>
++          <p id="compositionNote" class="card-note"></p>
++          <p class="pattern-source-note">한국 조각보의 불규칙한 면 분할과 모시의 결, 쌈솔에서 영감을 받아 새로 그린 디지털 작품입니다.</p>
++        </article>
++
++        <article class="fortune-card">
++          <p class="step-label">Today in Korea</p>
++          <div class="fortune-score-row">
++            <strong id="fortuneScore">--</strong>
++            <span>/ 100점</span>
++          </div>
++          <p class="fortune-score-basis" id="fortuneScoreBasis"></p>
++          <h3 id="fortuneTheme"></h3>
++          <p id="fortuneReading" class="fortune-reading"></p>
++          <dl class="fortune-details">
++            <div><dt>추천 행동</dt><dd id="fortuneAction"></dd></div>
++            <div><dt>확인할 점</dt><dd id="fortuneCheck"></dd></div>
++            <div><dt>오늘의 색</dt><dd id="fortuneColor"></dd></div>
++          </dl>
++          <p class="card-note" id="fortuneNotice"></p>
++        </article>
++      </div>
++
++      <div class="report-footer-note">
++        <p id="paidDisclaimer"></p>
++        <p><strong>보관 안내:</strong> 이 개발 버전은 결과를 현재 브라우저에 30일간 저장합니다. 정식 서비스에서는 로그인 보관함과 거래 기록을 분리해 연결해야 합니다.</p>
++      </div>
++    </section>
++
++    <section class="method-note" aria-label="서비스 안내">
++      <p>계산과 HEX는 코드가 정합니다. 향후 AI는 승인된 근거를 쉬운 문장으로 설명하는 데만 사용하며, 계산값을 바꿀 수 없습니다.</p>
++    </section>
++  </main>
++
++  <dialog class="checkout-dialog" id="checkoutDialog" aria-labelledby="checkout-title">
++    <form method="dialog" class="checkout-card">
++      <button class="dialog-close" value="cancel" aria-label="닫기">×</button>
++      <p class="eyebrow">Local Test Checkout</p>
++      <h2 id="checkout-title">Astral Report</h2>
++      <div class="checkout-price"><span>결제 금액</span><strong>1,000원</strong></div>
++      <ul>
++        <li>5가지 상세 풀이와 오행 컬러 지도</li>
++        <li>컬러 4개 활용법과 조각보 아트 PNG</li>
++        <li>오늘의 운세와 30일 브라우저 보관</li>
++      </ul>
++      <div class="test-payment-notice">
++        <strong>실제 결제가 아닙니다.</strong>
++        <span>카드번호를 받지 않고, 결제 완료 화면만 테스트합니다.</span>
++      </div>
++      <p class="checkout-error" id="checkoutError" role="alert" hidden></p>
++      <button class="test-pay-button" id="testPayButton" type="button">테스트 결제 완료하기</button>
++    </form>
++  </dialog>
++
++  <footer>
++    <span>MaC · Memory and Color</span>
++    <span>Astral Color calculation version 0.1</span>
++  </footer>
++  <script src="js/astral-jogakbo.js" defer></script>
++  <script src="js/astral-report-ui.js" defer></script>
++  <script src="js/astral.js" defer></script>
++</body>
++</html>
+diff --git a/public/astral/css/astral.css b/public/astral/css/astral.css
+new file mode 100644
+index 0000000..26282e9
+--- /dev/null
++++ b/public/astral/css/astral.css
+@@ -0,0 +1,494 @@
++:root {
++  --paper: #f2efe9;
++  --paper-deep: #e7e0d6;
++  --ink: #24211f;
++  --muted: #756e68;
++  --line: rgba(53, 47, 43, 0.16);
++  --gold: #92764d;
++  --white: #fcfbf8;
++  --serif: "Cormorant Garamond", Georgia, serif;
++  --sans: "Plus Jakarta Sans", "Pretendard", sans-serif;
++}
++
++* { box-sizing: border-box; }
++html { scroll-behavior: smooth; }
++body {
++  margin: 0;
++  color: var(--ink);
++  background:
++    radial-gradient(circle at 18% 8%, rgba(255,255,255,.72), transparent 28rem),
++    var(--paper);
++  font-family: var(--sans);
++  -webkit-font-smoothing: antialiased;
++}
++button, input, select { font: inherit; }
++button, a { -webkit-tap-highlight-color: transparent; }
++
++.astral-header {
++  width: min(1180px, calc(100% - 48px));
++  min-height: 88px;
++  margin: 0 auto;
++  display: flex;
++  align-items: center;
++  justify-content: space-between;
++  border-bottom: 1px solid var(--line);
++}
++.brand { color: inherit; text-decoration: none; display: flex; align-items: baseline; gap: 12px; }
++.brand-mark { font-size: 25px; font-weight: 800; letter-spacing: -.05em; }
++.brand-copy { color: var(--muted); font-family: var(--serif); font-size: 16px; font-style: italic; }
++.back-link { color: var(--muted); font-size: 12px; letter-spacing: .08em; text-decoration: none; }
++.back-link:hover { color: var(--ink); }
++
++main { width: min(1180px, calc(100% - 48px)); margin: 0 auto; }
++.hero { padding: 84px 0 64px; text-align: center; }
++.eyebrow, .step-label {
++  margin: 0 0 16px;
++  color: var(--gold);
++  font-size: 10px;
++  font-weight: 700;
++  letter-spacing: .2em;
++  text-transform: uppercase;
++}
++.hero h1 { margin: 0; font-size: clamp(58px, 9vw, 112px); line-height: .88; letter-spacing: -.075em; }
++.hero h1 em { color: var(--gold); font-family: var(--serif); font-weight: 500; }
++.hero-copy { margin: 34px 0 0; color: var(--muted); font-size: 15px; line-height: 1.8; }
++.principle-row { margin-top: 30px; display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; }
++.principle-row span { padding: 8px 12px; border: 1px solid var(--line); border-radius: 999px; color: #6b625b; font-size: 11px; }
++
++.workspace {
++  display: grid;
++  grid-template-columns: minmax(0, 1.02fr) minmax(0, .98fr);
++  min-height: 720px;
++  overflow: hidden;
++  border: 1px solid var(--line);
++  border-radius: 28px;
++  background: rgba(252,251,248,.74);
++  box-shadow: 0 28px 80px rgba(51, 43, 37, .08);
++}
++.form-panel { padding: clamp(30px, 5vw, 66px); }
++.panel-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; margin-bottom: 42px; }
++.panel-heading h2, .empty-result h2, .color-result h2 { margin: 0; font-size: 25px; letter-spacing: -.035em; }
++.support-badge { padding: 7px 10px; border-radius: 99px; background: #e9e2d7; color: #6c5a42; font-size: 10px; font-weight: 700; white-space: nowrap; }
++.field-group { margin: 0 0 27px; padding: 0; border: 0; }
++.field-group legend, .field-group > label, .field-label-row > label:first-child { display: block; margin-bottom: 11px; font-size: 12px; font-weight: 700; }
++.segmented-control { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
++.segmented-control label { cursor: pointer; }
++.segmented-control input { position: absolute; opacity: 0; pointer-events: none; }
++.segmented-control span {
++  display: grid; place-items: center; min-height: 46px;
++  border: 1px solid var(--line); border-radius: 10px; color: var(--muted); font-size: 13px;
++  transition: .2s ease;
++}
++.segmented-control input:checked + span { border-color: #4a443f; color: var(--ink); background: #eee9e1; box-shadow: inset 0 0 0 1px #4a443f; }
++.date-grid { display: grid; grid-template-columns: 1.25fr 1fr 1fr; gap: 10px; }
++.input-wrap span { display: block; margin: 0 0 7px; color: var(--muted); font-size: 10px; }
++.input-wrap input, .input-wrap select, .standard-input {
++  width: 100%; min-height: 48px; padding: 0 14px;
++  border: 1px solid var(--line); border-radius: 10px; outline: none;
++  color: var(--ink); background: var(--white);
++}
++.input-wrap input:focus, .input-wrap select:focus, .standard-input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(146,118,77,.1); }
++.field-label-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
++.check-label { display: inline-flex !important; align-items: center; gap: 7px; margin: 0 !important; color: var(--muted); font-size: 11px !important; cursor: pointer; }
++.check-label input { accent-color: #4b433d; }
++.field-help { margin: 8px 0 0; color: #918982; font-size: 10px; }
++.standard-input:disabled { opacity: .5; background: #e9e6e1; }
++.privacy-note { display: flex; gap: 10px; margin: 34px 0 20px; padding: 14px; border-radius: 12px; background: #ece8e1; }
++.privacy-dot { width: 7px; height: 7px; margin-top: 5px; flex: 0 0 auto; border-radius: 50%; background: #738171; box-shadow: 0 0 0 4px rgba(115,129,113,.12); }
++.privacy-note p { margin: 0; color: #675f59; font-size: 10px; line-height: 1.65; }
++.privacy-note strong { color: #3c3835; }
++.form-error { margin: 0 0 12px; padding: 11px 13px; border-radius: 9px; background: #f5dfdc; color: #8c423a; font-size: 11px; line-height: 1.5; }
++.primary-button, .secondary-button {
++  width: 100%; min-height: 54px; border: 0; border-radius: 12px; cursor: pointer;
++  transition: transform .2s ease, background .2s ease, opacity .2s ease;
++}
++.primary-button { display: flex; align-items: center; justify-content: space-between; padding: 0 20px; color: white; background: #2e2a27; font-size: 12px; font-weight: 700; }
++.primary-button:hover { transform: translateY(-2px); background: #171513; }
++.primary-button:disabled { opacity: .6; cursor: wait; transform: none; }
++
++.preview-panel {
++  position: relative; display: grid; place-items: center; padding: clamp(30px, 5vw, 66px);
++  background:
++    linear-gradient(rgba(39,35,32,.94), rgba(39,35,32,.97)),
++    repeating-linear-gradient(45deg, transparent 0 18px, rgba(255,255,255,.03) 18px 19px);
++  color: #f4f0e9;
++}
++.empty-result, .loading-result { text-align: center; }
++.empty-result h2 { margin: 15px 0 12px; color: #f7f3ed; }
++.empty-result > p:last-child { color: #aaa19a; font-size: 12px; line-height: 1.75; }
++.orb { position: relative; width: 190px; height: 190px; margin: 0 auto 38px; border-radius: 50%; background: conic-gradient(from 40deg, #798f88, #b3846d, #d3bf96, #6b8494, #798f88); filter: saturate(.6); box-shadow: 0 30px 70px rgba(0,0,0,.35); animation: float 5s ease-in-out infinite; }
++.orb::after { content: ""; position: absolute; inset: 18px; border: 1px solid rgba(255,255,255,.28); border-radius: 50%; }
++.orb span { position: absolute; inset: 34px; border-radius: 50%; background: rgba(37,33,30,.5); backdrop-filter: blur(7px); }
++@keyframes float { 50% { transform: translateY(-9px) rotate(3deg); } }
++.loading-ring { width: 56px; height: 56px; margin: 0 auto 20px; border: 1px solid rgba(255,255,255,.15); border-top-color: #c8b899; border-radius: 50%; animation: spin 1s linear infinite; }
++@keyframes spin { to { transform: rotate(360deg); } }
++.loading-result p { color: #bdb4ac; font-size: 12px; }
++.color-result { width: min(100%, 430px); }
++.color-swatch { position: relative; width: 100%; aspect-ratio: 1.55; margin-bottom: 28px; overflow: hidden; border-radius: 18px; box-shadow: 0 24px 60px rgba(0,0,0,.3); transition: background .5s ease; }
++.color-swatch::before { content: ""; position: absolute; inset: 12px; border: 1px solid rgba(255,255,255,.28); border-radius: 11px; }
++.swatch-shine { position: absolute; inset: 0; background: radial-gradient(circle at 25% 15%, rgba(255,255,255,.28), transparent 38%), linear-gradient(140deg, transparent 55%, rgba(0,0,0,.14)); }
++.result-title-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; }
++.day-master { display: block; margin-bottom: 7px; color: #bfb5ab; font-family: var(--serif); font-size: 14px; font-style: italic; }
++.color-result h2 { color: #fff; font-size: 31px; }
++.hex-chip { padding: 8px 10px; border: 1px solid rgba(255,255,255,.2); border-radius: 8px; color: #ddd5cc; background: transparent; cursor: pointer; font-size: 11px; }
++.hex-chip:hover { border-color: rgba(255,255,255,.55); }
++.result-description { margin: 22px 0 0; color: #c4bbb3; font-size: 12px; line-height: 1.85; }
++.notice-list { display: grid; gap: 7px; margin-top: 20px; }
++.notice-list p { margin: 0; padding: 9px 11px; border-left: 2px solid #bba77f; color: #bfb4aa; background: rgba(255,255,255,.04); font-size: 10px; line-height: 1.55; }
++.boundary-card { margin-top: 20px; padding: 16px; border: 1px solid rgba(212,187,138,.3); border-radius: 12px; background: rgba(183,144,79,.08); }
++.boundary-heading span { display: block; margin-bottom: 5px; color: #c9af7e; font-size: 9px; font-weight: 700; letter-spacing: .15em; text-transform: uppercase; }
++.boundary-heading strong { font-size: 11px; }
++.candidate-row { display: flex; justify-content: space-between; gap: 12px; margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,.08); color: #c9c0b7; font-size: 10px; }
++.candidate-pillars { color: #f0e8df; letter-spacing: .08em; }
++.disclaimer { color: #8f8780; font-size: 9px; line-height: 1.6; }
++.secondary-button { min-height: 42px; margin-top: 14px; color: #d8d0c7; border: 1px solid rgba(255,255,255,.16); background: transparent; font-size: 10px; }
++.secondary-button:hover { background: rgba(255,255,255,.06); }
++
++.paid-preview { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; padding: 120px 7%; }
++.paid-copy h2 { margin: 0; font-size: clamp(34px, 4vw, 54px); letter-spacing: -.06em; line-height: 1.08; }
++.paid-copy > p:last-child { max-width: 520px; margin: 24px 0 0; color: var(--muted); font-size: 12px; line-height: 1.8; }
++.paid-card { padding: 30px; border: 1px solid var(--line); border-radius: 18px; background: rgba(255,255,255,.42); }
++.price-row { display: flex; align-items: baseline; justify-content: space-between; padding-bottom: 20px; border-bottom: 1px solid var(--line); }
++.price-row span { color: var(--muted); font-size: 11px; }
++.price-row strong { font-size: 23px; }
++.paid-card ul { display: grid; gap: 13px; margin: 24px 0; padding: 0; list-style: none; }
++.paid-card li { position: relative; padding-left: 18px; color: #5e5751; font-size: 11px; }
++.paid-card li::before { content: "·"; position: absolute; left: 3px; color: var(--gold); font-weight: 800; }
++.paid-card > button { width: 100%; min-height: 46px; border: 0; border-radius: 9px; color: #fff; background: #2e2a27; font-size: 11px; font-weight: 700; cursor: pointer; transition: .2s ease; }
++.paid-card > button:hover:not(:disabled) { transform: translateY(-2px); background: #171513; }
++.paid-card > button:disabled { color: #8b827a; background: #ded8cf; cursor: not-allowed; }
++.paid-stage-note { margin: 12px 0 0; color: #8d8279; font-size: 9px; line-height: 1.55; text-align: center; }
++
++.paid-report { margin: 0 0 120px; padding: clamp(32px, 6vw, 72px); border-radius: 28px; color: #eee8df; background: #292623; box-shadow: 0 28px 80px rgba(51,43,37,.16); }
++.report-heading { display: flex; justify-content: space-between; gap: 30px; align-items: flex-start; padding-bottom: 40px; border-bottom: 1px solid rgba(255,255,255,.11); }
++.report-heading h2 { margin: 0; font-size: clamp(34px, 4.55vw, 60px); letter-spacing: -.065em; line-height: 1.02; white-space: nowrap; }
++.report-heading > div > p:last-child { margin: 18px 0 0; color: #a99f96; font-size: 10px; line-height: 1.7; }
++.test-badge { padding: 9px 12px; border: 1px solid rgba(210,181,125,.35); border-radius: 999px; color: #d2b57d; font-size: 9px; white-space: nowrap; }
++.pillar-strip { display: grid; grid-template-columns: repeat(4, 1fr); margin: 34px 0 90px; border: 1px solid rgba(255,255,255,.11); border-radius: 14px; overflow: hidden; }
++.pillar-strip > div { min-height: 94px; display: grid; place-items: center; align-content: center; gap: 8px; border-right: 1px solid rgba(255,255,255,.11); }
++.pillar-strip > div:last-child { border-right: 0; }
++.pillar-strip span { color: #938b84; font-size: 9px; letter-spacing: .12em; }
++.pillar-strip strong { font-family: var(--serif); color: #f5efe7; font-size: 27px; font-weight: 500; letter-spacing: .1em; }
++.report-overview { position: relative; overflow: hidden; padding: 34px; border: 1px solid rgba(255,255,255,.11); border-radius: 18px; background: linear-gradient(135deg, var(--overview-color, #3c3935), rgba(255,255,255,.025)); }
++.report-overview::after { content: ""; position: absolute; right: -80px; bottom: -110px; width: 280px; height: 280px; border: 1px solid rgba(255,255,255,.13); border-radius: 50%; box-shadow: 0 0 0 36px rgba(255,255,255,.025), 0 0 0 72px rgba(255,255,255,.018); }
++.report-overview h3 { position: relative; z-index: 1; max-width: 760px; margin: 9px 0 13px; font-size: clamp(24px, 3vw, 39px); letter-spacing: -.045em; }
++.report-overview > p:not(.step-label) { position: relative; z-index: 1; max-width: 760px; margin: 0; color: #cec5bc; font-size: 11px; line-height: 1.9; }
++.overview-keywords { position: relative; z-index: 1; display: flex; flex-wrap: wrap; gap: 7px; margin-top: 22px; }
++.overview-keywords span { padding: 8px 11px; border: 1px solid rgba(255,255,255,.13); border-radius: 999px; color: #e3d9cf; background: rgba(30,27,24,.26); font-size: 9px; }
++.report-section-heading { margin: 80px 0 28px; }
++.report-section-heading h3, .pattern-card h3, .fortune-card h3 { margin: 0; font-size: 25px; letter-spacing: -.035em; }
++.reading-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
++.reading-grid article { display: flex; flex-direction: column; min-height: 470px; padding: 30px; border: 1px solid rgba(255,255,255,.1); border-top: 3px solid var(--section-color, rgba(255,255,255,.18)); border-radius: 15px; background: rgba(255,255,255,.025); }
++.reading-grid article:last-child { grid-column: 1 / -1; min-height: 390px; }
++.reading-number { color: #b69a6b; font-family: var(--serif); font-size: 24px; font-style: italic; }
++.reading-grid h4 { min-height: 42px; margin: 25px 0 22px; font-size: 18px; }
++.reading-grid p { margin: 0 0 17px; color: #bfb6ad; font-size: 10px; line-height: 1.8; }
++.reading-grid p strong { display: block; margin-bottom: 5px; color: #7f766f; font-size: 8px; letter-spacing: .1em; }
++.reading-grid .reading-action { margin: auto 0 0; padding: 16px; border-radius: 9px; color: #e5ddd3; background: rgba(183,151,96,.11); }
++.element-profile { display: grid; grid-template-columns: 1.1fr .9fr; gap: 18px; padding: 28px; border: 1px solid rgba(255,255,255,.1); border-radius: 17px; background: rgba(255,255,255,.025); }
++.element-bars { display: grid; gap: 13px; }
++.element-bar { display: grid; grid-template-columns: 25px 1fr 25px; gap: 10px; align-items: center; color: #cfc5bb; font-size: 10px; }
++.element-track { height: 13px; overflow: hidden; border-radius: 999px; background: rgba(255,255,255,.07); }
++.element-fill { display: block; height: 100%; min-width: 4px; border-radius: inherit; box-shadow: inset 0 0 0 1px rgba(255,255,255,.2); }
++.element-profile-copy { padding: 12px 8px 12px 22px; border-left: 1px solid rgba(255,255,255,.09); }
++.element-profile-copy h4 { margin: 8px 0 15px; font-size: 20px; }
++.element-profile-copy > p { color: #b9b0a8; font-size: 10px; line-height: 1.8; }
++.element-profile-copy .element-caution { color: #89817a; font-size: 9px; }
++.element-solution { position: relative; overflow: hidden; margin-top: 22px; padding: 22px; border: 1px solid color-mix(in srgb, var(--solution-color) 42%, rgba(255,255,255,.08)); border-radius: 13px; background: linear-gradient(145deg, color-mix(in srgb, var(--solution-color) 14%, transparent), rgba(255,255,255,.025)); }
++.element-solution::after { content: ""; position: absolute; width: 150px; height: 150px; right: -72px; top: -72px; border-radius: 50%; background: var(--solution-color); opacity: .11; box-shadow: 0 0 0 22px color-mix(in srgb, var(--solution-color) 8%, transparent), 0 0 0 45px color-mix(in srgb, var(--solution-color) 4%, transparent); }
++.solution-label { position: relative; z-index: 1; margin: 0 0 8px; color: var(--solution-color); font-size: 8px; letter-spacing: .18em; }
++.element-solution h5 { position: relative; z-index: 1; margin: 0 0 9px; color: #e6ddd4; font-size: 15px; line-height: 1.45; }
++.element-solution > p:not(.solution-label) { position: relative; z-index: 1; margin: 0; color: #bdb3aa; font-size: 9px; line-height: 1.75; }
++.element-solution ul { position: relative; z-index: 1; display: grid; gap: 7px; margin: 16px 0; padding: 0; list-style: none; }
++.element-solution li { position: relative; padding-left: 14px; color: #d1c7bd; font-size: 9px; line-height: 1.6; }
++.element-solution li::before { content: ""; position: absolute; left: 0; top: .55em; width: 5px; height: 5px; border-radius: 50%; background: var(--solution-color); box-shadow: 0 0 0 3px color-mix(in srgb, var(--solution-color) 15%, transparent); }
++.solution-meta { position: relative; z-index: 1; display: grid; gap: 8px; margin: 0; padding-top: 14px; border-top: 1px solid rgba(255,255,255,.08); }
++.solution-meta div { display: grid; grid-template-columns: 58px 1fr; gap: 8px; }
++.solution-meta dt { color: #827971; font-size: 8px; }
++.solution-meta dd { margin: 0; color: #bdb3aa; font-size: 8px; line-height: 1.55; }
++.paid-color-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
++.paid-color-grid article { display: grid; grid-template-columns: 105px 1fr; column-gap: 20px; padding: 16px; border: 1px solid rgba(255,255,255,.1); border-radius: 14px; }
++.paid-color-swatch { grid-row: 1 / span 6; display: block; width: 105px; height: 100%; min-height: 190px; border-radius: 9px; box-shadow: inset 0 0 0 1px rgba(255,255,255,.2); }
++.color-role { margin: 0 0 6px; color: #a99984; font-size: 9px; letter-spacing: .1em; }
++.paid-color-grid h4 { margin: 0; font-size: 17px; }
++.paid-color-grid article > p { margin: 10px 0 0; color: #9f968e; font-size: 9px; line-height: 1.65; }
++.paid-color-grid .color-guide { padding-top: 10px; border-top: 1px solid rgba(255,255,255,.08); color: #c8beb4; }
++.paid-color-grid .color-caution { color: #7f7770; }
++.paid-color-grid code { color: #cfc5bb; font-family: var(--sans); font-size: 9px; }
++.pattern-fortune-grid { display: grid; grid-template-columns: 1.25fr .75fr; gap: 16px; margin-top: 90px; }
++.pattern-card, .fortune-card { padding: 22px; border: 1px solid rgba(255,255,255,.11); border-radius: 17px; background: rgba(255,255,255,.025); }
++.card-topline { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 22px; }
++.pattern-family { margin: 7px 0 0; color: #9e958d; font-size: 9px; }
++.download-button { padding: 10px 12px; border: 1px solid rgba(255,255,255,.2); border-radius: 8px; color: #dfd5ca; background: transparent; cursor: pointer; font-size: 9px; }
++.download-button:hover { background: rgba(255,255,255,.06); }
++#patternCanvas { display: block; width: 100%; height: auto; border: 1px solid rgba(255,255,255,.14); border-radius: 10px; background: #171513; box-shadow: 0 24px 60px rgba(0,0,0,.28), inset 0 0 0 1px rgba(255,255,255,.04); }
++.card-note { margin: 16px 0 0; color: #89817a; font-size: 8px; line-height: 1.65; }
++.pattern-source-note { margin: 8px 0 0; color: #706a65; font-size: 7px; line-height: 1.6; }
++.fortune-card { display: flex; flex-direction: column; }
++.fortune-score-row { display: flex; align-items: baseline; gap: 7px; margin: 22px 0 12px; }
++.fortune-score-row strong { color: #d2b57d; font-family: var(--serif); font-size: 84px; font-weight: 500; line-height: .8; }
++.fortune-score-row span { color: #938b84; font-size: 11px; }
++.fortune-score-basis { margin: 2px 0 17px; color: #9d9288; font-size: 8px; line-height: 1.55; }
++.fortune-reading { margin: 24px 0; color: #c2b9b0; font-size: 10px; line-height: 1.8; }
++.fortune-details { margin: auto 0 0; }
++.fortune-details div { padding: 13px 0; border-top: 1px solid rgba(255,255,255,.09); }
++.fortune-details dt { margin-bottom: 6px; color: #807871; font-size: 8px; }
++.fortune-details dd { margin: 0; color: #d5ccc3; font-size: 10px; line-height: 1.55; }
++#fortuneColor::before { content: ""; display: inline-block; width: 9px; height: 9px; margin-right: 7px; border-radius: 50%; background: var(--today-color); }
++.report-footer-note { margin-top: 42px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,.1); }
++.report-footer-note p { margin: 7px 0; color: #8d857e; font-size: 9px; line-height: 1.7; }
++
++.checkout-dialog { width: min(460px, calc(100% - 32px)); padding: 0; border: 0; border-radius: 20px; color: var(--ink); background: var(--white); box-shadow: 0 35px 100px rgba(0,0,0,.35); }
++.checkout-dialog::backdrop { background: rgba(25,22,20,.72); backdrop-filter: blur(4px); }
++.checkout-card { position: relative; padding: 36px; }
++.dialog-close { position: absolute; top: 16px; right: 16px; width: 34px; height: 34px; border: 0; border-radius: 50%; color: #746c65; background: #eeeae4; cursor: pointer; font-size: 20px; }
++.checkout-card h2 { margin: 0; font-size: 32px; }
++.checkout-price { display: flex; align-items: baseline; justify-content: space-between; margin-top: 27px; padding: 18px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
++.checkout-price span { color: var(--muted); font-size: 10px; }
++.checkout-price strong { font-size: 22px; }
++.checkout-card ul { display: grid; gap: 9px; padding: 0; margin: 20px 0; list-style: none; color: #635b55; font-size: 10px; }
++.checkout-card li::before { content: "✓"; margin-right: 8px; color: #738171; }
++.test-payment-notice { display: grid; gap: 4px; padding: 14px; border-radius: 10px; background: #eee9e1; }
++.test-payment-notice strong { color: #63523e; font-size: 10px; }
++.test-payment-notice span { color: #776e67; font-size: 9px; line-height: 1.5; }
++.checkout-error { padding: 10px; border-radius: 8px; color: #8c423a; background: #f5dfdc; font-size: 9px; }
++.test-pay-button { width: 100%; min-height: 50px; margin-top: 18px; border: 0; border-radius: 10px; color: white; background: #2e2a27; cursor: pointer; font-size: 11px; font-weight: 700; }
++.test-pay-button:disabled { opacity: .55; cursor: wait; }
++.method-note { padding: 28px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); text-align: center; }
++.method-note p { margin: 0; color: var(--muted); font-size: 10px; line-height: 1.7; }
++footer { width: min(1180px, calc(100% - 48px)); min-height: 110px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; color: #888078; font-size: 9px; letter-spacing: .08em; }
++
++[hidden] { display: none !important; }
++
++/* Ivory atelier: readable paper, ink, and compact chromatic palette cards. */
++.preview-panel { color: var(--ink); background: radial-gradient(circle at 20% 8%, #fffdf8, transparent 65%), #eee7db; border-left: 1px solid var(--line); }
++.empty-result h2, .color-result h2 { color: var(--ink); }
++.empty-result > p:last-child, .loading-result p, .result-description { color: #625b53; }
++.orb { box-shadow: 0 24px 60px rgba(112,89,63,.16); }
++.orb span { background: rgba(252,248,239,.6); }
++.loading-ring { border-color: #d5c8b6; border-top-color: #8b6e48; }
++.color-swatch { box-shadow: 0 18px 44px rgba(88,69,45,.14); }
++.day-master { color: #716352; }
++.hex-chip { color: #635847; background: rgba(255,255,255,.62); border-color: #cfc4b3; }
++.hex-chip:hover { border-color: #957650; }
++.notice-list p { color: #655d51; background: #fffaf0; }
++.boundary-card { border-color: #d4b88d; background: #fcf5e7; }
++.boundary-heading span { color: #806037; }
++.candidate-row { border-color: #e4d8c5; color: #71624e; }
++.candidate-pillars { color: #35302a; }
++.disclaimer { color: #756c61; font-size: 11px; }
++.secondary-button { color: #54493c; border-color: #cfc2b1; background: rgba(255,255,255,.5); }
++.secondary-button:hover { background: #fffbf3; }
++.paid-report { color: var(--ink); background: #faf7f0; border: 1px solid #e3dbce; box-shadow: 0 24px 64px rgba(102,81,51,.07); }
++.report-heading { border-color: #e1d7c7; }
++.report-heading h2 { font-size: clamp(24px, 3.3vw, 42px); }
++.report-heading > div > p:last-child { color: #756d62; font-size: 12px; }
++.test-badge { color: #81633c; border-color: #d9c7ac; background: #f7eddd; }
++.pillar-strip { margin-bottom: 60px; border-color: #e2d8c7; background: #fffefa; box-shadow: 0 5px 16px rgba(119,95,61,.04); }
++.pillar-strip > div { border-color: #e5dccc; }
++.pillar-strip span { color: #796c5a; font-size: 11px; }
++.pillar-strip strong { color: #322c25; }
++.report-overview { border-color: #ded4c4; background: linear-gradient(130deg, var(--overview-color), #fffdf7 84%); }
++.report-overview::after { border-color: rgba(124,105,78,.15); box-shadow: 0 0 0 36px rgba(124,105,78,.025), 0 0 0 72px rgba(124,105,78,.018); }
++.report-overview > p:not(.step-label) { color: #5f574d; font-size: 13px; }
++.overview-keywords span { color: #635745; border-color: #ddd1be; background: rgba(255,253,247,.74); font-size: 11px; }
++.reading-grid article { min-height: 0; padding: 28px; border-color: #e4dccc; background: #fffefa; box-shadow: 0 6px 16px rgba(112,89,56,.025); }
++.reading-grid article:last-child { min-height: 0; }
++.reading-number { color: #937341; }
++.reading-grid h4 { min-height: 0; margin: 20px 0 24px; font-size: 20px; line-height: 1.45; }
++.reading-grid p { color: #5a534b; font-size: 13px; line-height: 1.85; }
++.reading-grid p strong { color: #8a765a; font-size: 11px; letter-spacing: .04em; }
++.reading-grid .reading-action { color: #494034; background: #f5efe3; }
++.element-profile { align-items: start; border-color: #e3d9c8; background: #fffefa; }
++.element-bars { padding: 10px 0; gap: 19px; }
++.element-bar { color: #665b4c; font-size: 13px; }
++.element-track { background: #eee8de; height: 16px; }
++.element-fill { box-shadow: inset 0 0 0 1px rgba(70,49,25,.08); }
++.element-profile-copy { border-color: #e4dacc; }
++.element-profile-copy h4 { color: #433a2f; line-height: 1.5; }
++.element-profile-copy > p { color: #6a5e4d; font-size: 12px; }
++.element-profile-copy .element-caution { color: #7c6d5b; font-size: 11px; }
++.element-solution { border-color: #e5d9c4; background: linear-gradient(145deg, color-mix(in srgb, var(--solution-color) 19%, #fffdf7), #fffdf7); }
++.solution-label { color: #8b6e43; font-size: 9px; }
++.element-solution h5 { color: #493e31; font-size: 16px; }
++.element-solution > p:not(.solution-label), .element-solution li { color: #615445; font-size: 12px; }
++.solution-meta { border-color: #e6dccd; }
++.solution-meta dt { color: #7c6c56; font-size: 10px; }
++.solution-meta dd { color: #635847; font-size: 11px; }
++.paid-color-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
++.paid-color-grid article { display: flex; flex-direction: column; gap: 0; min-width: 0; padding: 15px; border: 1px solid #e0d7c8; border-radius: 14px; background: #fffefa; box-shadow: 0 4px 14px rgba(98,76,47,.035); }
++.paid-color-grid .color-role { margin: 0 0 10px; color: #8c734f; font-size: 11px; }
++.paid-color-swatch { position: relative; grid-row: auto; width: 100%; height: 112px; min-height: 112px; aspect-ratio: auto; padding: 0; border: 1px solid rgba(74,57,36,.13); border-radius: 8px; box-shadow: inset 0 1px 0 rgba(255,255,255,.18); cursor: pointer; transition: transform .18s; }
++.paid-color-swatch:hover { transform: translateY(-2px); }
++.swatch-copy-label { position: absolute; right: 8px; bottom: 8px; padding: 4px 7px; border-radius: 4px; color: #fffdf6; background: rgba(38,31,23,.58); font-size: 9px; font-weight: 500; }
++.paid-color-grid h4 { margin: 14px 0 6px; font-size: 15px; line-height: 1.5; }
++.paid-color-grid code { margin: 0 0 13px; color: #7c7060; font-size: 11px; letter-spacing: .03em; }
++.color-chip-details { margin-top: auto; border-top: 1px solid #e9e1d4; padding-top: 10px; }
++.color-chip-details summary { color: #8b7554; cursor: pointer; font-size: 10px; line-height: 1.6; }
++.color-chip-details p { color: #716453; font-size: 11px; line-height: 1.8; }
++.paid-color-grid .color-guide { color: #594a38; border-color: #e6dccd; }
++.paid-color-grid .color-caution { color: #7a6c5b; }
++.pattern-card, .fortune-card { background: #fffefa; border-color: #e2d7c6; }
++.pattern-family { color: #7e6e59; font-size: 11px; line-height: 1.6; }
++.download-button { border-color: #cdbb9f; color: #6e5430; background: #fbf5e8; font-size: 11px; }
++.download-button:hover { background: #f3e8d4; }
++#patternCanvas { border-color: #e4d9c7; background: #fffaf1; box-shadow: 0 12px 30px rgba(103,78,42,.1); border-radius: 5px; }
++.pattern-area-legend { display: flex; flex-wrap: wrap; gap: 8px 15px; margin: 18px 0 0; }
++.pattern-area-legend span { display: flex; gap: 6px; align-items: center; color: #76684f; font-size: 11px; }
++.pattern-area-legend i { width: 10px; height: 10px; border-radius: 2px; box-shadow: inset 0 0 0 1px rgba(40,30,20,.14); }
++.card-note { color: #756955; font-size: 11px; line-height: 1.8; }
++.pattern-source-note { color: #8c7e6a; font-size: 10px; }
++.fortune-score-row strong { color: #947445; }
++.fortune-score-row span { color: #82735d; }
++.fortune-score-basis { color: #85735b; font-size: 10px; }
++.fortune-reading { color: #665b4e; font-size: 13px; }
++.fortune-details div { border-color: #e5dacc; }
++.fortune-details dt { color: #8c7858; font-size: 11px; }
++.fortune-details dd { color: #54483a; font-size: 13px; }
++.report-footer-note { border-color: #e2d8c8; }
++.report-footer-note p { color: #82715b; font-size: 11px; }
++button:focus-visible, summary:focus-visible { outline: 2px solid #967348; outline-offset: 4px; }
++
++@media (max-width: 820px) {
++  .workspace, .paid-preview { grid-template-columns: 1fr; }
++  .preview-panel { min-height: 610px; }
++  .paid-preview { gap: 35px; padding: 90px 0; }
++  .paid-report { padding: 35px 24px; }
++  .reading-grid { grid-template-columns: 1fr; }
++  .reading-grid article:last-child { grid-column: auto; }
++  .reading-grid article { min-height: 300px; }
++  .element-profile { grid-template-columns: 1fr; }
++  .element-profile-copy { padding: 18px 0 0; border-top: 1px solid rgba(255,255,255,.09); border-left: 0; }
++  .paid-color-grid { grid-template-columns: 1fr 1fr; }
++  .pattern-fortune-grid { grid-template-columns: 1fr; }
++}
++@media (max-width: 560px) {
++  .astral-header, main, footer { width: min(100% - 28px, 1180px); }
++  .astral-header { min-height: 70px; }
++  .brand-copy { display: none; }
++  .hero { padding: 66px 0 50px; }
++  .hero h1 { font-size: 57px; }
++  .hero-copy br { display: none; }
++  .workspace { border-radius: 18px; }
++  .form-panel, .preview-panel { padding: 32px 21px; }
++  .panel-heading { margin-bottom: 34px; }
++  .date-grid { grid-template-columns: 1.2fr 1fr 1fr; gap: 7px; }
++  .input-wrap input, .input-wrap select { padding: 0 9px; }
++  .preview-panel { min-height: 560px; }
++  .orb { width: 155px; height: 155px; }
++  .paid-preview { padding: 75px 0; }
++  .paid-color-grid { grid-template-columns: 1fr; }
++  .paid-color-grid article { padding: 13px; }
++  .paid-color-swatch { width: 100%; height: 100px; min-height: 100px; }
++  .report-heading { display: block; }
++  .report-heading h2 { font-size: clamp(18px, 6.1vw, 28px); }
++  .test-badge { display: inline-block; margin-top: 20px; }
++  .pillar-strip { grid-template-columns: 1fr 1fr; margin-bottom: 65px; }
++  .pillar-strip > div:nth-child(2) { border-right: 0; }
++  .pillar-strip > div:nth-child(-n+2) { border-bottom: 1px solid #e5dccc; }
++  .paid-color-grid { grid-template-columns: 1fr; }
++  .paid-color-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
++  .paid-color-grid h4 { font-size: 13px; }
++  .preview-panel { border-left: 0; border-top: 1px solid var(--line); }
++  .card-topline { align-items: flex-start; flex-direction: column; }
++  .checkout-card { padding: 31px 23px 25px; }
++  footer { min-height: 90px; align-items: flex-start; justify-content: center; flex-direction: column; gap: 8px; }
++}
++/* Color-first report: independent spectrum and daily-use cards prevent tall blank columns. */
++.section-intro { max-width: 760px; margin: 12px 0 0; color: #786b5b; font-size: 13px; line-height: 1.8; }
++.pillar-heading { margin-top: 34px; }
++.pillar-strip { gap: 12px; margin: 20px 0 44px; border: 0; border-radius: 0; overflow: visible; background: none; box-shadow: none; }
++.pillar-card { padding: 18px 14px 14px; text-align: center; border: 1px solid #ded5c8; border-radius: 13px; background: #fffefa; box-shadow: 0 5px 16px rgba(119,95,61,.045); }
++.pillar-card h4 { margin: 0 0 16px; font-size: 13px; color: #887965; font-weight: 500; }
++.pillar-day { border-color: #bca382; background: #fffaf0; }
++.pillar-letter { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 6px; margin: 8px 0; padding: 9px 10px; border-radius: 7px; background: color-mix(in srgb, var(--pillar-color) 20%, #fffefa); }
++.pillar-letter small { grid-column: 1 / -1; text-align: left; color: #94836d; font-size: 9px; }
++.pillar-letter strong { color: var(--pillar-ink); font-family: var(--sans); font-size: 25px; font-weight: 650; letter-spacing: -.02em; text-align: left; }
++.pillar-letter .pillar-element { color: #fffefa; background: var(--pillar-ink); padding: 3px 5px; border-radius: 4px; font-size: 10px; letter-spacing: 0; }
++.pillar-card > small { display: block; margin-top: 12px; color: #8a765a; font-size: 10px; }
++.pillar-unknown { padding: 40px 0; margin: 0; color: #8c8174; font-size: 18px; }
++.reading-grid { gap: 16px; }
++.reading-grid article, .reading-grid article:last-child { min-height: 0; padding: 24px; border-top-width: 1px; }
++.reading-color-header { display: flex; align-items: center; gap: 16px; padding-bottom: 18px; margin-bottom: 18px; border-bottom: 1px solid #e9e0d2; }
++.reading-color-header > div:last-child { min-width: 0; }
++.reading-color-chip { display: grid; place-items: center; flex: 0 0 72px; height: 84px; border-radius: 9px; background: var(--section-color); border: 1px solid rgba(57,44,29,.1); box-shadow: inset 0 1px 0 rgba(255,255,255,.3); }
++.reading-color-chip .reading-number { padding: 4px 8px; color: #fffcf5; background: rgba(50,39,26,.45); border-radius: 4px; font-family: var(--serif); font-size: 22px; }
++.reading-role { color: #8c7454; font-size: 10px; }
++.reading-grid h4 { margin: 7px 0 8px; font-size: 18px; line-height: 1.5; }
++.reading-grid .reading-color-name { margin: 0; font-size: 11px; color: #8a7961; }
++.reading-grid .reading-possibility { margin: 0 0 18px; font-size: 14px; color: #453d33; }
++.reading-facts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
++.reading-facts p { margin: 0; padding: 14px; border-radius: 8px; background: #f7f3ec; color: #6c5d4c; font-size: 12px; line-height: 1.8; }
++.reading-grid p strong { font-size: 10px; letter-spacing: .04em; }
++.reading-grid .reading-action { margin: auto 0 0; border-left: 3px solid var(--section-color); padding: 14px 16px; color: #514330; background: color-mix(in srgb, var(--section-color) 18%, #fffdf7); font-size: 13px; }
++.reading-evidence { margin-top: 16px; border-top: 1px solid #ece3d6; padding-top: 11px; }
++.reading-evidence summary { color: #887358; font-size: 11px; cursor: pointer; }
++.reading-evidence p { margin: 12px 0 0; font-size: 12px; color: #786a59; }
++.element-profile { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 32px; padding: 24px; align-items: center; }
++.element-spectrum { min-width: 0; margin: 0; }
++#elementSpectrum svg { display: block; width: 100%; max-width: 480px; height: auto; margin: 0 auto; overflow: visible; }
++.spectrum-axis { font-family: var(--sans); font-size: 13px; font-weight: 600; }
++.spectrum-axis-value { fill: #94836e; font-size: 10px; font-weight: 400; }
++.element-spectrum figcaption { max-width: 380px; margin: 8px auto 0; color: #91816b; font-size: 10px; line-height: 1.7; text-align: center; }
++.element-profile-copy { padding: 8px 0 8px 24px; }
++.element-profile-copy h4 { margin: 8px 0 10px; font-size: 21px; }
++.element-profile-copy > p { margin: 0 0 14px; font-size: 12px; }
++.spectrum-legend { list-style: none; margin: 18px 0; padding: 0; display: grid; gap: 7px; }
++.spectrum-legend li { display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-radius: 6px; background: #f8f4ec; color: #68583f; font-size: 12px; }
++.spectrum-legend i { width: 15px; height: 15px; flex: 0 0 auto; border: 1px solid rgba(77,57,31,.12); border-radius: 4px; }
++.spectrum-legend strong { margin-left: auto; color: #77664d; font-weight: 500; font-size: 11px; }
++.element-profile-copy .element-caution { margin: 0; color: #90816d; font-size: 10px; }
++.styling-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
++.styling-card { display: flex; flex-direction: column; min-width: 0; padding: 24px; border: 1px solid #e1d7c6; border-radius: 15px; background: #fffefa; box-shadow: 0 6px 16px rgba(93,72,40,.025); }
++.styling-card header { display: flex; align-items: center; gap: 16px; }
++.styling-swatch { display: block; width: 72px; height: 80px; flex: 0 0 auto; border-radius: 9px; background: var(--styling-color); border: 1px solid rgba(60,43,22,.1); }
++.styling-purpose { margin: 0 0 8px; color: #8c7250; font-size: 11px; }
++.styling-card h4 { margin: 0 0 7px; font-size: 20px; }
++.styling-card code { color: #a18b6c; font-size: 11px; }
++.styling-tagline { margin: 20px 0 0; padding-top: 16px; border-top: 1px solid #e9dfd0; color: #786346; font-size: 13px; }
++.styling-card ul { margin: 16px 0; padding: 0; list-style: none; display: grid; gap: 9px; }
++.styling-card li { display: grid; grid-template-columns: 60px minmax(0, 1fr); gap: 10px; padding: 10px 12px; border-radius: 8px; background: #f8f5ef; }
++.styling-card li span { color: #978165; font-size: 10px; line-height: 1.8; }
++.styling-card li p { margin: 0; color: #62523d; font-size: 12px; line-height: 1.7; }
++.styling-frequency { margin: auto 0 0; padding: 12px 14px; border-left: 3px solid var(--styling-color); border-radius: 5px; color: #736045; background: color-mix(in srgb, var(--styling-color) 18%, #fffdf7); font-size: 11px; line-height: 1.7; }
++.styling-card details { margin-top: 14px; }
++.styling-card summary { color: #978163; font-size: 10px; cursor: pointer; }
++.styling-card details p { color: #8a775b; font-size: 11px; line-height: 1.8; }
++.styling-note { margin: 18px 0 0; color: #91816a; font-size: 11px; line-height: 1.8; }
++@media (max-width: 900px) {
++  .pillar-letter { grid-template-columns: 1fr; }
++  .pillar-letter strong { text-align: center; font-size: 24px; }
++  .pillar-letter .pillar-element { justify-self: center; }
++}
++@media (max-width: 820px) {
++  .reading-grid article { min-height: 0; }
++  .element-profile { grid-template-columns: 1fr; gap: 22px; }
++  .element-profile-copy { padding: 20px 0 0; border-top: 1px solid #e8ddcc; border-left: 0; }
++  .styling-grid { grid-template-columns: 1fr; }
++}
++@media (max-width: 560px) {
++  .pillar-strip { gap: 10px; margin-bottom: 34px; }
++  .pillar-card { padding: 14px 10px; }
++  .pillar-letter { grid-template-columns: 1fr auto; padding: 8px; }
++  .pillar-letter strong { font-size: 21px; text-align: left; }
++  .report-section-heading { margin: 52px 0 22px; }
++  .report-section-heading h3 { font-size: 22px; line-height: 1.5; }
++  .section-intro { font-size: 12px; }
++  .reading-grid article, .reading-grid article:last-child { padding: 18px; }
++  .reading-color-header { gap: 12px; }
++  .reading-color-chip { flex-basis: 54px; height: 72px; }
++  .reading-grid h4 { font-size: 16px; }
++  .reading-grid .reading-color-name { font-size: 10px; }
++  .reading-facts { grid-template-columns: 1fr; }
++  .reading-facts p { padding: 12px; }
++  .element-profile { padding: 18px 12px; }
++  .element-profile-copy { padding: 20px 5px 0; }
++  .styling-card { padding: 18px; }
++  .styling-swatch { width: 58px; height: 70px; }
++  .styling-card h4 { font-size: 18px; }
++  .styling-purpose { font-size: 10px; }
++  .styling-card li { grid-template-columns: 49px minmax(0, 1fr); padding: 10px; gap: 8px; }
++}
++@media (prefers-reduced-motion: reduce) {
++  *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
++}
+diff --git a/public/astral/js/astral-jogakbo.js b/public/astral/js/astral-jogakbo.js
+new file mode 100644
+index 0000000..ea4797e
+--- /dev/null
++++ b/public/astral/js/astral-jogakbo.js
+@@ -0,0 +1,272 @@
++/* Deterministic, area-preserving jogakbo composition and textile rendering. */
++(function (root) {
++  'use strict';
++
++  const ELEMENTS = ['목', '화', '토', '금', '수'];
++  const STEM_ELEMENTS = { 갑: '목', 을: '목', 병: '화', 정: '화', 무: '토', 기: '토', 경: '금', 신: '금', 임: '수', 계: '수' };
++  const FALLBACK_COLORS = { 목: '#A7BDA4', 화: '#DBA09A', 토: '#D3BF96', 금: '#E7E2D8', 수: '#A4B8C5' };
++  const TOPIC_OFFSETS = { 비견: 0, 겁재: 0, 식신: 1, 상관: 1, 편재: 2, 정재: 2, 편관: 3, 정관: 3, 편인: 4, 정인: 4 };
++
++  function seededRandom(seed) {
++    let value = parseInt(seed.slice(0, 8), 16) || 1;
++    return () => {
++      value = (Math.imul(value, 1664525) + 1013904223) >>> 0;
++      return value / 4294967296;
++    };
++  }
++
++  function mix(source, target, amount) {
++    const parts = [1, 3, 5].map((offset) => {
++      const from = parseInt(source.slice(offset, offset + 2), 16);
++      const to = parseInt(target.slice(offset, offset + 2), 16);
++      return Math.round(from + (to - from) * amount).toString(16).padStart(2, '0');
++    });
++    return `#${parts.join('')}`;
++  }
++
++  function paletteForReport(report) {
++    const palette = { ...FALLBACK_COLORS };
++    const day = report.colors.find((color) => color.role === '고유색');
++    const dayElement = STEM_ELEMENTS[day.basis];
++    const dayIndex = ELEMENTS.indexOf(dayElement);
++    // Priority: unique color, talent, relationship, then the balance color.
++    // Several roles can refer to one element; keep one hue per element.
++    const assigned = new Set();
++    report.colors.forEach((color) => {
++      const element = color.role === '고유색' ? dayElement
++        : color.role === '균형색' ? color.basis
++          : ELEMENTS[(dayIndex + TOPIC_OFFSETS[color.basis]) % 5];
++      if (!assigned.has(element)) {
++        palette[element] = color.hex;
++        assigned.add(element);
++      }
++    });
++    return palette;
++  }
++
++  function buildLayout(report) {
++    const random = seededRandom(report.pattern_seed);
++    const family = report.pattern_family?.key || 'weave';
++    const pieces = [];
++    const total = ELEMENTS.reduce((sum, element) => sum + report.visual_composition[element], 0);
++    if (total !== 6 && total !== 8) throw new Error('조각보는 6칸 또는 8칸 구성이 필요합니다.');
++    ELEMENTS.forEach((element) => {
++      const count = report.visual_composition[element];
++      if (!count) return;
++      const partCount = Math.max(2, count * (family === 'quiet' ? 2 : 3));
++      const weights = Array.from({ length: partCount }, () => .28 + random() * 1.35);
++      const sum = weights.reduce((value, weight) => value + weight, 0);
++      weights.forEach((weight) => pieces.push({ element, weight: (count / total) * (weight / sum) }));
++    });
++    for (let index = pieces.length - 1; index > 0; index -= 1) {
++      const other = Math.floor(random() * (index + 1));
++      [pieces[index], pieces[other]] = [pieces[other], pieces[index]];
++    }
++    const layout = [];
++    function split(items, x, y, width, height, depth) {
++      if (items.length === 1) {
++        layout.push({ ...items[0], x, y, width, height, grain: random(), shade: random() });
++        return;
++      }
++      const cut = Math.max(1, Math.min(items.length - 1, Math.round(items.length * (.32 + random() * .36))));
++      const left = items.slice(0, cut);
++      const right = items.slice(cut);
++      const leftWeight = left.reduce((sum, item) => sum + item.weight, 0);
++      const fullWeight = items.reduce((sum, item) => sum + item.weight, 0);
++      const ratio = leftWeight / fullWeight;
++      const aspect = family === 'ribbon' ? .8 : family === 'window' ? 1.3 : 1;
++      let vertical = width / height > aspect;
++      if (width / height > .7 && width / height < 1.5 && random() > .57) vertical = !vertical;
++      if (depth === 0 && family === 'courtyard') vertical = false;
++      if (vertical) {
++        split(left, x, y, width * ratio, height, depth + 1);
++        split(right, x + width * ratio, y, width * (1 - ratio), height, depth + 1);
++      } else {
++        split(left, x, y, width, height * ratio, depth + 1);
++        split(right, x, y + height * ratio, width, height * (1 - ratio), depth + 1);
++      }
++    }
++    split(pieces, 0, 0, 1, 1, 0);
++    return layout;
++  }
++
++  function drawFabric(context, rectangle, color, random) {
++    const { x, y, width, height, grain, shade } = rectangle;
++    context.save();
++    context.beginPath();
++    context.rect(x, y, width, height);
++    context.clip();
++    const base = mix(color, '#fff8e9', .06 + shade * .12);
++    const silk = context.createLinearGradient(x, y, x + width, y + height);
++    silk.addColorStop(0, mix(base, '#fffdf5', .08));
++    silk.addColorStop(.4, base);
++    silk.addColorStop(1, mix(base, '#403128', .055));
++    context.fillStyle = silk;
++    context.fillRect(x, y, width, height);
++
++    // Fine warp and weft evoke mo시 without changing the element areas.
++    for (let offset = 1; offset < width; offset += 3.6) {
++      context.beginPath();
++      context.moveTo(x + offset, y);
++      context.lineTo(x + offset, y + height);
++      context.strokeStyle = offset % 9 < 4 ? 'rgba(255,252,238,.13)' : 'rgba(57,39,29,.045)';
++      context.lineWidth = .7;
++      context.stroke();
++    }
++    for (let offset = 2; offset < height; offset += 4.7) {
++      context.beginPath();
++      context.moveTo(x, y + offset);
++      context.lineTo(x + width, y + offset);
++      context.strokeStyle = 'rgba(255,252,238,.11)';
++      context.lineWidth = .9;
++      context.stroke();
++    }
++    for (let index = 0; index < 16; index += 1) {
++      const fiberX = x + random() * width;
++      const fiberY = y + random() * height;
++      context.beginPath();
++      context.moveTo(fiberX, fiberY);
++      context.lineTo(fiberX + (grain > .5 ? 30 : 1), fiberY + (grain > .5 ? 1 : 30));
++      context.strokeStyle = 'rgba(255,255,255,.16)';
++      context.lineWidth = 1;
++      context.stroke();
++    }
++
++    // Folded seam: a translucent overlap, a shadow, and two fine stitch rows.
++    context.fillStyle = 'rgba(47,32,23,.08)';
++    context.fillRect(x, y, 7, height);
++    context.fillRect(x, y, width, 6);
++    context.strokeStyle = 'rgba(255,250,233,.64)';
++    context.lineWidth = 1.2;
++    context.strokeRect(x + 4, y + 4, Math.max(0, width - 8), Math.max(0, height - 8));
++    context.setLineDash([3.2, 4.2]);
++    context.strokeStyle = 'rgba(255,251,235,.76)';
++    context.lineWidth = .9;
++    context.strokeRect(x + 8, y + 8, Math.max(0, width - 16), Math.max(0, height - 16));
++    context.restore();
++  }
++
++  function draw(canvas, report) {
++    const context = canvas.getContext('2d');
++    const palette = paletteForReport(report);
++    const layout = buildLayout(report);
++    const random = seededRandom(report.pattern_seed.slice(8) + report.pattern_seed.slice(0, 8));
++    const byRole = Object.fromEntries(report.colors.map((color) => [color.role, color]));
++    const { width, height } = canvas;
++    const unit = width / 1600;
++    context.clearRect(0, 0, width, height);
++    context.save();
++    context.scale(unit, unit);
++    const paper = context.createLinearGradient(0, 0, 1600, 2000);
++    paper.addColorStop(0, '#fffcf6');
++    paper.addColorStop(1, mix(byRole['균형색'].hex, '#fffaf1', .9));
++    context.fillStyle = paper;
++    context.fillRect(0, 0, 1600, height / unit);
++
++    context.fillStyle = '#91734f';
++    context.font = '500 26px Arial, sans-serif';
++    context.fillText('MaC   /   CHROMATIC ATELIER', 120, 104);
++    context.textAlign = 'right';
++    context.fillStyle = '#8c8071';
++    context.font = '24px Georgia, serif';
++    context.fillText('Astral Color', 1480, 104);
++    context.textAlign = 'left';
++    context.fillStyle = '#37342e';
++    context.font = '500 62px Pretendard, Arial, sans-serif';
++    context.fillText('나의 색을 잇다', 120, 205);
++    context.fillStyle = '#857a6d';
++    context.font = '26px Pretendard, Arial, sans-serif';
++    context.fillText('조각마다 담긴 나의 흐름, 한 장의 보자기로', 122, 255);
++
++    const artX = 120;
++    const artY = 326;
++    const artSize = 1360;
++    const binding = 22;
++    const innerSize = artSize - binding * 2;
++    context.save();
++    context.shadowColor = 'rgba(79,58,39,.19)';
++    context.shadowBlur = 32;
++    context.shadowOffsetY = 14;
++    context.fillStyle = byRole['관계색'].hex;
++    context.fillRect(artX, artY, artSize, artSize);
++    context.restore();
++    // The binding and surrounding paper are outside the proportional patch area.
++    const borderLight = context.createLinearGradient(artX, artY, artX + artSize, artY + artSize);
++    borderLight.addColorStop(0, mix(byRole['관계색'].hex, '#fffaf0', .27));
++    borderLight.addColorStop(.6, byRole['관계색'].hex);
++    borderLight.addColorStop(1, mix(byRole['관계색'].hex, '#3c3025', .08));
++    context.fillStyle = borderLight;
++    context.fillRect(artX, artY, artSize, artSize);
++    layout.forEach((piece) => drawFabric(context, {
++      ...piece,
++      x: artX + binding + piece.x * innerSize,
++      y: artY + binding + piece.y * innerSize,
++      width: piece.width * innerSize,
++      height: piece.height * innerSize,
++    }, palette[piece.element], random));
++
++    context.save();
++    context.beginPath();
++    context.rect(artX, artY, artSize, artSize);
++    context.clip();
++    const daylight = context.createRadialGradient(artX + 230, artY + 110, 20, artX + 400, artY + 330, artSize);
++    daylight.addColorStop(0, 'rgba(255,250,230,.18)');
++    daylight.addColorStop(.5, 'rgba(255,250,230,.035)');
++    daylight.addColorStop(1, 'rgba(255,250,230,0)');
++    context.fillStyle = daylight;
++    context.fillRect(artX, artY, artSize, artSize);
++    // Soft diagonal fabric creases, kept subtle so the color stays legible.
++    for (let index = 0; index < 3; index += 1) {
++      const start = artY + 230 + index * 360 + random() * 100;
++      context.beginPath();
++      context.moveTo(artX, start);
++      context.bezierCurveTo(artX + 360, start - 50, artX + 1000, start + 60, artX + artSize, start + 20);
++      context.strokeStyle = 'rgba(255,252,236,.09)';
++      context.lineWidth = 18;
++      context.stroke();
++      context.strokeStyle = 'rgba(58,39,24,.025)';
++      context.lineWidth = 3;
++      context.stroke();
++    }
++    context.restore();
++    context.save();
++    context.setLineDash([4, 5]);
++    context.strokeStyle = 'rgba(255,247,221,.64)';
++    context.lineWidth = 1.5;
++    context.strokeRect(artX + 9, artY + 9, artSize - 18, artSize - 18);
++    context.restore();
++
++    context.fillStyle = '#6f6354';
++    context.font = '27px Pretendard, Arial, sans-serif';
++    context.fillText(report.pattern_family?.name || '나만의 조각보', 120, 1752);
++    context.textAlign = 'right';
++    context.fillStyle = '#9a8a75';
++    context.font = '23px Georgia, serif';
++    context.fillText(`No. ${report.pattern_seed.slice(0, 8).toUpperCase()}`, 1480, 1752);
++    context.textAlign = 'left';
++    report.colors.forEach((color, index) => {
++      const x = 120 + index * 342;
++      context.fillStyle = color.hex;
++      context.fillRect(x, 1810, 42, 42);
++      context.strokeStyle = 'rgba(61,46,30,.12)';
++      context.lineWidth = 1;
++      context.strokeRect(x, 1810, 42, 42);
++      context.fillStyle = '#7e7161';
++      context.font = '21px Pretendard, Arial, sans-serif';
++      context.fillText(color.role, x + 56, 1828);
++      context.fillStyle = '#3d3933';
++      context.font = '23px Pretendard, Arial, sans-serif';
++      context.fillText(color.name, x + 56, 1859);
++    });
++    context.fillStyle = '#897a68';
++    context.font = '22px Pretendard, Arial, sans-serif';
++    const ratios = ELEMENTS.map((element) => `${element} ${Math.round(report.visual_composition[element] / report.visual_slot_count * 1000) / 10}%`).join('   ·   ');
++    context.fillText(`패치 면적  /  ${ratios}`, 120, 1940);
++    context.restore();
++    return { layout, palette };
++  }
++
++  const api = { ELEMENTS, paletteForReport, buildLayout, draw };
++  if (typeof module !== 'undefined' && module.exports) module.exports = api;
++  else root.AstralJogakbo = api;
++}(typeof globalThis !== 'undefined' ? globalThis : this));
+diff --git a/public/astral/js/astral-report-ui.js b/public/astral/js/astral-report-ui.js
+new file mode 100644
+index 0000000..9a58a7c
+--- /dev/null
++++ b/public/astral/js/astral-report-ui.js
+@@ -0,0 +1,84 @@
++/* Presentation only: calculated pillars, color HEX and counts are never changed. */
++(function (root) {
++  'use strict';
++  const ELEMENTS = ['목', '화', '토', '금', '수'];
++  const ELEMENT_INK = { 목: '#315846', 화: '#A64632', 토: '#806238', 금: '#596674', 수: '#244B63' };
++  const STEM_ELEMENTS = { 갑: '목', 을: '목', 병: '화', 정: '화', 무: '토', 기: '토', 경: '금', 신: '금', 임: '수', 계: '수' };
++  const BRANCH_ELEMENTS = { 자: '수', 축: '토', 인: '목', 묘: '목', 진: '토', 사: '화', 오: '화', 미: '토', 신: '금', 유: '금', 술: '토', 해: '수' };
++  const STEM_HANJA = { 갑: '甲', 을: '乙', 병: '丙', 정: '丁', 무: '戊', 기: '己', 경: '庚', 신: '辛', 임: '壬', 계: '癸' };
++  const BRANCH_HANJA = { 자: '子', 축: '丑', 인: '寅', 묘: '卯', 진: '辰', 사: '巳', 오: '午', 미: '未', 신: '申', 유: '酉', 술: '戌', 해: '亥' };
++  const ENGLISH = { 목: 'Wood', 화: 'Fire', 토: 'Earth', 금: 'Metal', 수: 'Water' };
++
++  function pillarModels(pillars) {
++    return [['hour', '시주'], ['day', '일주'], ['month', '월주'], ['year', '연주']].map(([key, label]) => {
++      const value = pillars[key];
++      return {
++        key, label, value: value || null,
++        stem: value ? { text: value[0], hanja: STEM_HANJA[value[0]], element: STEM_ELEMENTS[value[0]] } : null,
++        branch: value ? { text: value[1], hanja: BRANCH_HANJA[value[1]], element: BRANCH_ELEMENTS[value[1]] } : null,
++      };
++    });
++  }
++
++  function spectrumModel(profile) {
++    if (ELEMENTS.some(element => !Number.isInteger(profile.counts[element]) || profile.counts[element] < 0)) throw new Error('오행 칸수는 음수가 아닌 정수여야 합니다.');
++    const total = ELEMENTS.reduce((sum, element) => sum + profile.counts[element], 0);
++    if (![6, 8].includes(profile.slot_count) || total !== profile.slot_count) throw new Error('오행 구성의 합계가 맞지 않습니다.');
++    const center = { x: 180, y: 170 };
++    const radius = 120;
++    // Zoom the shared count axis, not the data. Percentages still use all 6/8 slots.
++    const maximum = Math.max(...ELEMENTS.map(element => profile.counts[element]));
++    const point = (index, fraction) => {
++      const angle = (-90 + index * 72) * Math.PI / 180;
++      return { x: center.x + Math.cos(angle) * radius * fraction, y: center.y + Math.sin(angle) * radius * fraction };
++    };
++    const axes = ELEMENTS.map((element, index) => ({
++      element, english: ENGLISH[element], count: profile.counts[element],
++      percent: Math.round(profile.counts[element] / total * 1000) / 10,
++      color: profile.element_colors[element], ink: ELEMENT_INK[element],
++      outer: point(index, 1), label: point(index, 1.24),
++      value: point(index, profile.counts[element] / maximum),
++    }));
++    return { center, axes, maximum, rings: Array.from({ length: 8 }, (_, index) => ELEMENTS.map((_, axis) => point(axis, (index + 1) / 8))) };
++  }
++
++  function readingAccent(section, report) {
++    if (section.key === 'month_command') {
++      const element = BRANCH_ELEMENTS[report.pillars.month[1]];
++      return { role: '월령', name: `${element}의 계절색`, hex: report.element_profile.element_colors[element] };
++    }
++    return report.colors.find(color => color.role === section.color_role);
++  }
++
++  const BALANCE_TIPS = {
++    목: ['셔츠·양말의 작은 초록 포인트', '책상에 있는 화분이나 패브릭 소품', '시작할 일을 표시하는 노트 탭'],
++    화: ['스카프·양말·파우치의 부드러운 분홍 포인트', '컵이나 작은 패브릭에 따뜻한 색 한 곳', '전하고 싶은 말을 적는 메모의 강조선'],
++    토: ['가방·벨트·니트의 모래빛 한 곳', '책상 매트나 수납함의 차분한 바탕', '반복 일정을 묶는 달력 배경'],
++    금: ['밝은 셔츠·손수건으로 다른 색 사이에 여백', '이미 있는 밝은 트레이나 컵을 한 곳에 정리', '문서의 넓은 여백과 완료 라벨'],
++    수: ['푸른 양말·파우치처럼 작은 포인트', '쿠션·머그의 차분한 물빛', '독서 노트나 잠금화면의 부드러운 배경'],
++  };
++
++  function stylingModels(report) {
++    const byRole = Object.fromEntries(report.colors.map(color => [color.role, color]));
++    const solution = report.element_profile.color_solution;
++    return [
++      { key: 'daily', color: byRole['고유색'], title: '매일 함께할 색', tagline: '내 기준을 떠올리는 작은 시그니처',
++        reason: '일간에 연결된 고유색입니다. 날짜마다 바뀌지 않으니 매일 보는 물건 한두 곳에 가볍게 이어 보세요.',
++        tips: ['파우치·키링·양말 중 한 곳에 작은 포인트', '책상 위 컵이나 노트처럼 자주 보는 물건', '휴대폰 위젯이나 프로필의 작은 배경'],
++        frequency: '매일 · 작은 포인트 한두 곳' },
++      { key: 'balance', color: byRole['균형색'], title: '새롭게 더해볼 색', tagline: '익숙한 팔레트에 새로운 결 더하기',
++        reason: `${solution.element} ${report.element_profile.counts[solution.element]} / ${report.visual_slot_count}칸으로, 이미지 구성에서 적게 나타난 항목에 연결된 색입니다. 기운이 부족하다는 진단은 아닙니다.`,
++        tips: BALANCE_TIPS[solution.element], frequency: solution.ratio, moment: solution.moment },
++      { key: 'work', color: byRole['재능색'], title: '일·공부에 꺼낼 색', tagline: '집중할 일을 눈에 보이게 구분하기',
++        reason: `재능 주제 ${byRole['재능색'].basis}에 연결된 색입니다. 중요한 할 일을 찾기 쉽게 만드는 표식으로 써보세요.`,
++        tips: ['노트·파일의 탭이나 제목 표시', '오늘 끝낼 항목에만 짧은 강조선', '발표 자료의 핵심 한 문장에 포인트'], frequency: '일·공부할 때 · 핵심 한 곳' },
++      { key: 'meet', color: byRole['관계색'], title: '만남에 쓰는 색', tagline: '대화의 장면을 기억하는 포인트',
++        reason: `관계 주제 ${byRole['관계색'].basis}에 연결된 색입니다. 궁합을 바꾸는 색이 아니라 만남을 준비하는 취향의 도구입니다.`,
++        tips: ['약속 있는 날 스카프나 작은 액세서리', '초대장·메시지 카드의 부드러운 포인트', '대화 뒤 기억할 내용을 적는 메모'], frequency: '대화·약속이 있는 날' },
++    ];
++  }
++
++  const api = { ELEMENTS, ELEMENT_INK, pillarModels, spectrumModel, readingAccent, stylingModels };
++  if (typeof module !== 'undefined' && module.exports) module.exports = api;
++  else root.AstralReportUI = api;
++}(typeof globalThis !== 'undefined' ? globalThis : this));
+diff --git a/public/astral/js/astral.js b/public/astral/js/astral.js
+new file mode 100644
+index 0000000..11736b6
+--- /dev/null
++++ b/public/astral/js/astral.js
+@@ -0,0 +1,623 @@
++const form = document.getElementById('astralForm');
++const calendarRadios = document.querySelectorAll('input[name="calendarType"]');
++const leapMonthGroup = document.getElementById('leapMonthGroup');
++const birthMonth = document.getElementById('birthMonth');
++const birthDay = document.getElementById('birthDay');
++const birthTime = document.getElementById('birthTime');
++const timeUnknown = document.getElementById('timeUnknown');
++const formError = document.getElementById('formError');
++const submitButton = document.getElementById('submitButton');
++const emptyResult = document.getElementById('emptyResult');
++const loadingResult = document.getElementById('loadingResult');
++const colorResult = document.getElementById('colorResult');
++const paidStartButton = document.getElementById('paidStartButton');
++const checkoutDialog = document.getElementById('checkoutDialog');
++const testPayButton = document.getElementById('testPayButton');
++const paidReport = document.getElementById('paidReport');
++const REPORT_STORAGE_KEY = 'mac-astral-paid-report-preview';
++const REPORT_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
++let latestAstralPayload = null;
++let latestPaidReport = null;
++
++function fillNumberSelect(select, start, end, selected) {
++  select.innerHTML = '';
++  for (let value = start; value <= end; value += 1) {
++    const option = document.createElement('option');
++    option.value = String(value).padStart(2, '0');
++    option.textContent = `${value}`;
++    option.selected = value === selected;
++    select.appendChild(option);
++  }
++}
++
++fillNumberSelect(birthMonth, 1, 12, 5);
++fillNumberSelect(birthDay, 1, 31, 21);
++
++calendarRadios.forEach((radio) => {
++  radio.addEventListener('change', () => {
++    const isLunar = document.querySelector('input[name="calendarType"]:checked').value === 'lunar';
++    leapMonthGroup.hidden = !isLunar;
++  });
++});
++
++timeUnknown.addEventListener('change', () => {
++  birthTime.disabled = timeUnknown.checked;
++  birthTime.required = !timeUnknown.checked;
++});
++
++function showState(state) {
++  emptyResult.hidden = state !== 'empty';
++  loadingResult.hidden = state !== 'loading';
++  colorResult.hidden = state !== 'result';
++}
++
++function showError(message) {
++  formError.textContent = message;
++  formError.hidden = false;
++}
++
++function clearError() {
++  formError.hidden = true;
++  formError.textContent = '';
++}
++
++async function postJson(url, payload) {
++  let lastError;
++  for (let attempt = 0; attempt < 2; attempt += 1) {
++    try {
++      const response = await fetch((window.ASTRAL_API_BASE || '') + url, {
++        method: 'POST',
++        headers: { 'Content-Type': 'application/json' },
++        body: JSON.stringify(payload),
++      });
++      const result = await response.json();
++      if (!response.ok) throw new Error(result.error || (typeof result.detail === 'string' ? result.detail : '') || '결과를 불러오지 못했습니다.');
++      return result;
++    } catch (error) {
++      lastError = error;
++      if (!(error instanceof TypeError) || attempt === 1) throw error;
++      await new Promise((resolve) => window.setTimeout(resolve, 800));
++    }
++  }
++  throw lastError;
++}
++
++function buildPayload() {
++  const year = document.getElementById('birthYear').value.padStart(4, '0');
++  const month = birthMonth.value.padStart(2, '0');
++  const day = birthDay.value.padStart(2, '0');
++  const calendarType = document.querySelector('input[name="calendarType"]:checked').value;
++  const selectedGender = document.querySelector('input[name="gender"]:checked');
++  return {
++    calendar_type: calendarType,
++    birth_date: `${year}-${month}-${day}`,
++    is_leap_month: calendarType === 'lunar' && document.querySelector('input[name="leapMonth"]:checked').value === 'true',
++    birth_time: timeUnknown.checked ? '' : birthTime.value,
++    time_unknown: timeUnknown.checked,
++    birth_city: document.getElementById('birthCity').value,
++    gender: selectedGender ? selectedGender.value : '',
++  };
++}
++
++function renderNotices(notices) {
++  const container = document.getElementById('noticeList');
++  container.innerHTML = '';
++  notices.forEach((notice) => {
++    const paragraph = document.createElement('p');
++    paragraph.textContent = notice;
++    container.appendChild(paragraph);
++  });
++  container.hidden = notices.length === 0;
++}
++
++function renderCandidates(candidates) {
++  const card = document.getElementById('boundaryCard');
++  const container = document.getElementById('boundaryCandidates');
++  container.innerHTML = '';
++  candidates.forEach((candidate) => {
++    const row = document.createElement('div');
++    row.className = 'candidate-row';
++    const label = document.createElement('span');
++    label.textContent = candidate.label;
++    const pillars = document.createElement('span');
++    pillars.className = 'candidate-pillars';
++    pillars.textContent = [candidate.pillars.year, candidate.pillars.month, candidate.pillars.day, candidate.pillars.hour]
++      .filter(Boolean).join(' · ');
++    row.append(label, pillars);
++    container.appendChild(row);
++  });
++  card.hidden = candidates.length < 2;
++}
++
++function renderResult(result) {
++  const free = result.free_result;
++  document.getElementById('colorSwatch').style.background = free.color.hex;
++  document.getElementById('dayMaster').textContent = `일간 ${free.day_master} · 일주 ${free.day_pillar}`;
++  document.getElementById('colorName').textContent = free.color.name;
++  document.getElementById('hexChip').textContent = free.color.hex;
++  document.getElementById('resultDescription').textContent = free.description;
++  document.getElementById('disclaimer').textContent = result.disclaimer;
++  renderNotices(result.notices || []);
++  renderCandidates(result.boundary_candidates || []);
++  paidStartButton.disabled = false;
++  paidStartButton.textContent = '1,000원 유료 보고서 계속하기';
++  showState('result');
++}
++
++function mixHex(source, target, amount) {
++  const parse = (value) => [1, 3, 5].map((start) => Number.parseInt(value.slice(start, start + 2), 16));
++  const [sr, sg, sb] = parse(source);
++  const [tr, tg, tb] = parse(target);
++  const channel = (from, to) => Math.round(from + (to - from) * amount).toString(16).padStart(2, '0');
++  return `#${channel(sr, tr)}${channel(sg, tg)}${channel(sb, tb)}`;
++}
++
++function hexAlpha(hex, alpha) {
++  const red = Number.parseInt(hex.slice(1, 3), 16);
++  const green = Number.parseInt(hex.slice(3, 5), 16);
++  const blue = Number.parseInt(hex.slice(5, 7), 16);
++  return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
++}
++
++function drawPattern(report) {
++  const canvas = document.getElementById('patternCanvas');
++  const { palette } = AstralJogakbo.draw(canvas, report);
++  const legend = document.getElementById('patternAreaLegend');
++  legend.innerHTML = '';
++  AstralJogakbo.ELEMENTS.forEach((element) => {
++    const item = document.createElement('span');
++    const dot = document.createElement('i');
++    dot.style.backgroundColor = palette[element];
++    const percent = Math.round(report.visual_composition[element] / report.visual_slot_count * 1000) / 10;
++    item.append(dot, document.createTextNode(`${element} ${percent}%`));
++    legend.appendChild(item);
++  });
++}
++
++function renderPillars(report) {
++  const container = document.getElementById('reportPillars');
++  container.innerHTML = '';
++  AstralReportUI.pillarModels(report.pillars).forEach((pillar) => {
++    const item = document.createElement('article');
++    item.className = `pillar-card${pillar.key === 'day' ? ' pillar-day' : ''}`;
++    const name = document.createElement('h4');
++    name.textContent = pillar.label;
++    item.appendChild(name);
++    item.setAttribute('aria-label', `${pillar.label} ${pillar.value || '시간 미상'}`);
++    if (!pillar.value) {
++      const unknown = document.createElement('p');
++      unknown.className = 'pillar-unknown';
++      unknown.textContent = '시간 미상';
++      const note = document.createElement('small');
++      note.textContent = '시주는 만들지 않아요';
++      item.append(unknown, note);
++    } else {
++      [pillar.stem, pillar.branch].forEach((letter, index) => {
++        const row = document.createElement('div');
++        row.className = 'pillar-letter';
++        row.style.setProperty('--pillar-ink', AstralReportUI.ELEMENT_INK[letter.element]);
++        row.style.setProperty('--pillar-color', report.element_profile.element_colors[letter.element]);
++        const label = document.createElement('small');
++        label.textContent = index === 0 ? '천간' : '지지';
++        const glyph = document.createElement('strong');
++        glyph.textContent = `${letter.text}(${letter.hanja})`;
++        const element = document.createElement('span');
++        element.className = 'pillar-element';
++        element.textContent = letter.element;
++        row.append(label, glyph, element);
++        item.appendChild(row);
++      });
++      if (pillar.key === 'day') {
++        const marker = document.createElement('small');
++        marker.className = 'pillar-day-label';
++        marker.textContent = '일간 = 나의 기준';
++        item.appendChild(marker);
++      }
++    }
++    container.appendChild(item);
++  });
++}
++
++function renderOverview(overview, colors) {
++  const uniqueColor = colors.find((color) => color.role === '고유색');
++  const container = document.getElementById('reportOverview');
++  container.style.setProperty('--overview-color', hexAlpha(uniqueColor.hex, .24));
++  document.getElementById('overviewHeadline').textContent = overview.headline;
++  document.getElementById('overviewSummary').textContent = overview.summary;
++  const keywords = document.getElementById('overviewKeywords');
++  keywords.innerHTML = '';
++  overview.keywords.forEach((keyword) => {
++    const item = document.createElement('span');
++    item.textContent = keyword;
++    keywords.appendChild(item);
++  });
++}
++
++function renderReading(report) {
++  const container = document.getElementById('readingGrid');
++  container.innerHTML = '';
++  report.reading.forEach((section, index) => {
++    const accent = AstralReportUI.readingAccent(section, report);
++    const article = document.createElement('article');
++    const header = document.createElement('header');
++    const chip = document.createElement('div');
++    const heading = document.createElement('div');
++    const role = document.createElement('span');
++    const number = document.createElement('span');
++    const title = document.createElement('h4');
++    const colorName = document.createElement('p');
++    const possibility = document.createElement('p');
++    const facts = document.createElement('div');
++    const evidence = document.createElement('details');
++    const evidenceLabel = document.createElement('summary');
++    const evidenceCopy = document.createElement('p');
++    const action = document.createElement('p');
++    article.style.setProperty('--section-color', accent.hex);
++    header.className = 'reading-color-header';
++    chip.className = 'reading-color-chip';
++    chip.setAttribute('aria-label', `${accent.name} ${accent.hex}`);
++    role.className = 'reading-role';
++    role.textContent = accent.role;
++    number.className = 'reading-number';
++    number.textContent = String(index + 1).padStart(2, '0');
++    title.textContent = section.title;
++    colorName.className = 'reading-color-name';
++    colorName.textContent = `${accent.name} · ${accent.hex}`;
++    chip.appendChild(number);
++    heading.append(role, title, colorName);
++    header.append(chip, heading);
++    possibility.className = 'reading-possibility';
++    possibility.innerHTML = '<strong>해석 가능성</strong>';
++    possibility.append(document.createTextNode(section.possibility));
++    facts.className = 'reading-facts';
++    [['활용할 강점', section.strength], ['확인할 지점', section.watch]].forEach(([label, text]) => {
++      const box = document.createElement('p');
++      const caption = document.createElement('strong');
++      caption.textContent = label;
++      box.append(caption, document.createTextNode(text));
++      facts.appendChild(box);
++    });
++    action.className = 'reading-action';
++    action.innerHTML = '<strong>오늘 해볼 작은 행동</strong>';
++    action.append(document.createTextNode(section.action));
++    evidence.className = 'reading-evidence';
++    evidenceLabel.textContent = '이 풀이의 계산 근거 보기';
++    evidenceCopy.textContent = section.evidence;
++    evidence.append(evidenceLabel, evidenceCopy);
++    article.append(header, possibility, facts, action, evidence);
++    container.appendChild(article);
++  });
++}
++
++function renderElementProfile(profile) {
++  const model = AstralReportUI.spectrumModel(profile);
++  const container = document.getElementById('elementSpectrum');
++  container.innerHTML = '';
++  const svgNode = (name, attributes, parent) => {
++    const node = document.createElementNS('http://www.w3.org/2000/svg', name);
++    Object.entries(attributes).forEach(([key, value]) => node.setAttribute(key, value));
++    if (parent) parent.appendChild(node);
++    return node;
++  };
++  const points = (items) => items.map(point => `${point.x},${point.y}`).join(' ');
++  const svg = svgNode('svg', { viewBox: '0 0 360 340', role: 'img', 'aria-labelledby': 'spectrumTitle spectrumDesc' }, container);
++  svgNode('title', { id: 'spectrumTitle' }, svg).textContent = '오각형 오행 컬러 스펙트럼';
++  svgNode('desc', { id: 'spectrumDesc' }, svg).textContent = model.axes.map(axis => `${axis.element} ${axis.count}칸 ${axis.percent}%`).join(', ') + `. 바깥 눈금은 가장 많은 항목의 ${model.maximum}칸이며 다섯 축에 같은 눈금을 적용했습니다. 사주의 강약이 아닌 이미지용 구성입니다.`;
++  model.rings.forEach((ring, index) => svgNode('polygon', { points: points(ring), fill: 'none', stroke: '#e1dbcf', 'stroke-width': index === model.rings.length - 1 ? 1.4 : .8 }, svg));
++  model.axes.forEach(axis => svgNode('line', { x1: model.center.x, y1: model.center.y, x2: axis.outer.x, y2: axis.outer.y, stroke: '#e6dfd3' }, svg));
++  // Each colored wedge is clipped by the measured polygon, not an invented score.
++  const defs = svgNode('defs', {}, svg);
++  const clip = svgNode('clipPath', { id: 'spectrumAreaClip' }, defs);
++  svgNode('polygon', { points: points(model.axes.map(axis => axis.value)) }, clip);
++  const fill = svgNode('g', { 'clip-path': 'url(#spectrumAreaClip)' }, svg);
++  model.axes.forEach((axis, index) => {
++    const prev = model.axes[(index + 4) % 5].outer;
++    const next = model.axes[(index + 1) % 5].outer;
++    const start = { x: (prev.x + axis.outer.x) / 2, y: (prev.y + axis.outer.y) / 2 };
++    const end = { x: (next.x + axis.outer.x) / 2, y: (next.y + axis.outer.y) / 2 };
++    svgNode('polygon', { points: points([model.center, start, axis.outer, end]), fill: axis.color, 'fill-opacity': .85 }, fill);
++  });
++  svgNode('polygon', { class: 'spectrum-data', points: points(model.axes.map(axis => axis.value)), fill: 'none', stroke: '#8b6e43', 'stroke-width': 2.2, 'stroke-linejoin': 'round' }, svg);
++  model.axes.forEach(axis => {
++    if (axis.count > 0) svgNode('circle', { cx: axis.value.x, cy: axis.value.y, r: 4.8, fill: axis.ink, stroke: '#fffdf8', 'stroke-width': 1.7 }, svg);
++    const text = svgNode('text', { x: axis.label.x, y: axis.label.y, 'text-anchor': 'middle', fill: axis.ink, class: 'spectrum-axis' }, svg);
++    svgNode('tspan', { x: axis.label.x, dy: 0 }, text).textContent = `${axis.element} ${axis.english}`;
++    svgNode('tspan', { x: axis.label.x, dy: 18, class: 'spectrum-axis-value' }, text).textContent = `${axis.count}칸 · ${axis.percent}%`;
++  });
++  document.getElementById('spectrumScale').textContent = `확대 눈금 · 중심 0칸 → 바깥선 ${model.maximum}칸 · 8단계로 표시합니다. 비율(%)은 전체 ${profile.slot_count}칸 기준입니다.`;
++  const legend = document.getElementById('spectrumLegend');
++  legend.innerHTML = '';
++  model.axes.forEach(axis => {
++    const item = document.createElement('li');
++    const dot = document.createElement('i');
++    const label = document.createElement('span');
++    const value = document.createElement('strong');
++    dot.style.backgroundColor = axis.color;
++    label.textContent = axis.element;
++    value.textContent = `${axis.count} / ${profile.slot_count}칸 · ${axis.percent}%`;
++    item.append(dot, label, value);
++    legend.appendChild(item);
++  });
++  const solution = profile.color_solution;
++  document.getElementById('elementHeadline').textContent = `${profile.dominant.join('·')}의 면적이 가장 큰 팔레트`;
++  document.getElementById('elementDescription').textContent = `${profile.slot_count}칸을 오행별로 나눈 분포입니다. 적게 나타난 ${solution.element}에는 ${solution.color_name}을 균형색으로 연결했어요.`;
++  document.getElementById('elementNote').textContent = profile.note;
++}
++
++function renderStyling(report) {
++  const container = document.getElementById('stylingGrid');
++  container.innerHTML = '';
++  const labels = { daily: ['입는 색', '곁에 두는 색', '화면의 색'], balance: ['입는 색', '공간의 색', '기록의 색'], work: ['도구', '할 일', '표현'], meet: ['외출', '메시지', '기록'] };
++  AstralReportUI.stylingModels(report).forEach(model => {
++    const card = document.createElement('article');
++    card.className = `styling-card styling-${model.key}`;
++    card.style.setProperty('--styling-color', model.color.hex);
++    const header = document.createElement('header');
++    const swatch = document.createElement('span');
++    swatch.className = 'styling-swatch';
++    swatch.setAttribute('aria-label', model.color.hex);
++    const heading = document.createElement('div');
++    const label = document.createElement('p');
++    label.className = 'styling-purpose';
++    label.textContent = `${model.title} · ${model.color.role}`;
++    const name = document.createElement('h4');
++    name.textContent = model.color.name;
++    const hex = document.createElement('code');
++    hex.textContent = model.color.hex;
++    heading.append(label, name, hex);
++    header.append(swatch, heading);
++    const tagline = document.createElement('p');
++    tagline.className = 'styling-tagline';
++    tagline.textContent = model.tagline;
++    const useList = document.createElement('ul');
++    model.tips.forEach((tip, index) => {
++      const item = document.createElement('li');
++      const caption = document.createElement('span');
++      const text = document.createElement('p');
++      caption.textContent = labels[model.key][index];
++      text.textContent = tip;
++      item.append(caption, text);
++      useList.appendChild(item);
++    });
++    const frequency = document.createElement('p');
++    frequency.className = 'styling-frequency';
++    frequency.textContent = `이렇게 시작해요 · ${model.frequency}`;
++    const details = document.createElement('details');
++    const summary = document.createElement('summary');
++    const reason = document.createElement('p');
++    summary.textContent = '이 색을 제안하는 이유';
++    reason.textContent = model.reason;
++    details.append(summary, reason);
++    if (model.moment) {
++      const moment = document.createElement('p');
++      moment.textContent = `이럴 때 · ${model.moment}`;
++      details.appendChild(moment);
++    }
++    card.append(header, tagline, useList, frequency, details);
++    container.appendChild(card);
++  });
++}
++
++function renderPaidColors(colors) {
++  const descriptions = {
++    고유색: '일간을 기준으로 정한 중심 색',
++    재능색: '천간의 십신을 가중해 고른 활동 주제',
++    관계색: '일지 본기의 십신으로 읽는 관계 주제',
++    균형색: '이미지 구성에서 적은 오행을 채우는 시각화 색',
++  };
++  const container = document.getElementById('paidColorGrid');
++  container.innerHTML = '';
++  colors.forEach((color) => {
++    const card = document.createElement('article');
++    const swatch = document.createElement('button');
++    const copyLabel = document.createElement('span');
++    const role = document.createElement('p');
++    const name = document.createElement('h4');
++    const basis = document.createElement('p');
++    const guide = document.createElement('p');
++    const caution = document.createElement('p');
++    const hex = document.createElement('code');
++    const details = document.createElement('details');
++    const summary = document.createElement('summary');
++    swatch.className = 'paid-color-swatch';
++    swatch.type = 'button';
++    swatch.setAttribute('aria-label', `${color.name} ${color.hex} HEX 복사`);
++    swatch.style.backgroundColor = color.hex;
++    copyLabel.className = 'swatch-copy-label';
++    copyLabel.textContent = 'HEX 복사';
++    swatch.appendChild(copyLabel);
++    swatch.addEventListener('click', async () => {
++      try {
++        await navigator.clipboard.writeText(color.hex);
++        copyLabel.textContent = '복사 완료';
++        window.setTimeout(() => { copyLabel.textContent = 'HEX 복사'; }, 1400);
++      } catch (_) {
++        copyLabel.textContent = color.hex;
++      }
++    });
++    role.className = 'color-role';
++    role.textContent = color.role;
++    name.textContent = color.name;
++    basis.textContent = `${descriptions[color.role]} · 기준 ${color.basis}`;
++    guide.className = 'color-guide';
++    guide.textContent = `이렇게 사용해 보세요 · ${color.guide.use}`;
++    caution.className = 'color-caution';
++    caution.textContent = color.guide.avoid;
++    hex.textContent = color.hex;
++    details.className = 'color-chip-details';
++    summary.textContent = '색의 기준과 활용법';
++    details.append(summary, basis, guide, caution);
++    card.append(role, swatch, name, hex, details);
++    container.appendChild(card);
++  });
++}
++
++function renderFortune(fortune) {
++  document.getElementById('fortuneScore').textContent = fortune.score;
++  const scoreLabels = {
++    base: '기본', cycle_rhythm: '60일 리듬', element_familiarity: '오행 구성',
++    talent_match: '재능 주제', relationship_match: '관계 주제', branch_relation: '일지 관계',
++  };
++  document.getElementById('fortuneScoreBasis').textContent = Object.entries(fortune.score_components)
++    .filter(([key, value]) => key === 'base' || value !== 0)
++    .map(([key, value]) => `${scoreLabels[key]} ${value > 0 && key !== 'base' ? '+' : ''}${value}`)
++    .join(' · ');
++  document.getElementById('fortuneTheme').textContent = fortune.theme;
++  document.getElementById('fortuneReading').textContent = fortune.reading;
++  document.getElementById('fortuneAction').textContent = fortune.recommended_action;
++  document.getElementById('fortuneCheck').textContent = fortune.check_point;
++  const todayColor = document.getElementById('fortuneColor');
++  todayColor.textContent = `${fortune.today_color.name} ${fortune.today_color.hex}`;
++  todayColor.style.setProperty('--today-color', fortune.today_color.hex);
++  document.getElementById('fortuneNotice').textContent = `${fortune.date_kst} · ${fortune.notice}`;
++}
++
++function renderPaidReport(report) {
++  latestPaidReport = report;
++  const genderName = report.profile.gender === 'male' ? '남성' : '여성';
++  const timeLabel = report.profile.time_unknown ? '출생시간 미상' : '출생시간 반영';
++  document.getElementById('reportMeta').textContent = `${report.profile.solar_date} · ${report.profile.birth_city} · ${genderName} · ${timeLabel} · ${report.report_version}`;
++  renderPillars(report);
++  renderOverview(report.overview, report.colors);
++  renderReading(report);
++  renderElementProfile(report.element_profile);
++  renderStyling(report);
++  renderPaidColors(report.colors);
++  drawPattern(report);
++  document.getElementById('patternFamily').textContent = `${report.pattern_family.name} · ${report.pattern_family.inspiration}`;
++  renderFortune(report.today_fortune);
++  const counts = Object.entries(report.visual_composition).map(([element, count]) => `${element} ${count}`).join(' · ');
++  document.getElementById('compositionNote').textContent = `내부 패치 면적은 ${report.visual_slot_count}칸 오행 구성(${counts})의 비율을 따릅니다. 둘레와 바탕은 4색으로 연결합니다. 이미지용 비율이며 강약·용신 판단 수치는 아닙니다.`;
++  document.getElementById('paidDisclaimer').textContent = report.disclaimer;
++  document.querySelector('.test-badge').textContent = '개발용 테스트 결제';
++  paidReport.hidden = false;
++}
++
++function saveReportPreview(report) {
++  try {
++    localStorage.setItem(REPORT_STORAGE_KEY, JSON.stringify({
++      expiresAt: Date.now() + REPORT_RETENTION_MS,
++      report,
++    }));
++  } catch (_) {
++    // Storage can be blocked by the browser; the current result still remains visible.
++  }
++}
++
++function hidePaidReport() {
++  paidReport.hidden = true;
++  latestPaidReport = null;
++}
++
++function invalidateCalculatedResults() {
++  if (!latestAstralPayload && paidReport.hidden && colorResult.hidden) return;
++  latestAstralPayload = null;
++  hidePaidReport();
++  paidStartButton.disabled = true;
++  paidStartButton.textContent = '무료 결과 계산 후 열 수 있어요';
++  showState('empty');
++  clearError();
++}
++
++form.addEventListener('input', invalidateCalculatedResults);
++form.addEventListener('change', invalidateCalculatedResults);
++
++form.addEventListener('submit', async (event) => {
++  event.preventDefault();
++  clearError();
++  const payload = buildPayload();
++  if (!payload.gender) {
++    showError('성별을 선택해 주세요.');
++    return;
++  }
++  if (!payload.birth_city) {
++    showError('대한민국 내 출생 시·군을 입력해 주세요.');
++    return;
++  }
++  if (!payload.time_unknown && !payload.birth_time) {
++    showError('출생 시각을 입력하거나 시간 모름을 선택해 주세요.');
++    return;
++  }
++
++  hidePaidReport();
++  showState('loading');
++  submitButton.disabled = true;
++  try {
++    const result = await postJson('/api/astral', payload);
++    latestAstralPayload = payload;
++    renderResult(result);
++    if (window.innerWidth < 821) document.querySelector('.preview-panel').scrollIntoView({ behavior: 'smooth' });
++  } catch (error) {
++    showState('empty');
++    const message = error instanceof TypeError && /fetch/i.test(error.message)
++      ? '계산 서버에 연결하지 못했습니다. 화면을 새로고침한 뒤 다시 시도해 주세요.'
++      : error.message || '잠시 후 다시 시도해 주세요.';
++    showError(message);
++  } finally {
++    submitButton.disabled = false;
++  }
++});
++
++document.getElementById('hexChip').addEventListener('click', async (event) => {
++  const value = event.currentTarget.textContent;
++  try {
++    await navigator.clipboard.writeText(value);
++    event.currentTarget.textContent = '복사됨';
++    window.setTimeout(() => { event.currentTarget.textContent = value; }, 1200);
++  } catch (_) {
++    event.currentTarget.title = '복사할 수 없습니다';
++  }
++});
++
++document.getElementById('resetButton').addEventListener('click', () => {
++  showState('empty');
++  latestAstralPayload = null;
++  hidePaidReport();
++  paidStartButton.disabled = true;
++  paidStartButton.textContent = '무료 결과 계산 후 열 수 있어요';
++  clearError();
++  document.querySelector('.form-panel').scrollIntoView({ behavior: 'smooth' });
++});
++
++paidStartButton.addEventListener('click', () => {
++  if (!latestAstralPayload) return;
++  document.getElementById('checkoutError').hidden = true;
++  checkoutDialog.showModal();
++});
++
++testPayButton.addEventListener('click', async () => {
++  const checkoutError = document.getElementById('checkoutError');
++  checkoutError.hidden = true;
++  testPayButton.disabled = true;
++  testPayButton.textContent = '보고서를 만들고 있어요…';
++  try {
++    const report = await postJson('/api/astral/report-preview', latestAstralPayload);
++    renderPaidReport(report);
++    saveReportPreview(report);
++    checkoutDialog.close();
++    paidReport.scrollIntoView({ behavior: 'smooth', block: 'start' });
++  } catch (error) {
++    checkoutError.textContent = error instanceof TypeError && /fetch/i.test(error.message)
++      ? '보고서 서버에 연결하지 못했습니다. 화면을 새로고침한 뒤 다시 시도해 주세요.'
++      : error.message || '잠시 후 다시 시도해 주세요.';
++    checkoutError.hidden = false;
++  } finally {
++    testPayButton.disabled = false;
++    testPayButton.textContent = '테스트 결제 완료하기';
++  }
++});
++
++document.getElementById('downloadPatternButton').addEventListener('click', (event) => {
++  if (!latestPaidReport) return;
++  const canvas = document.getElementById('patternCanvas');
++  const link = document.createElement('a');
++  link.href = canvas.toDataURL('image/png');
++  link.download = `astral-color-${latestPaidReport.pattern_seed}.png`;
++  link.style.display = 'none';
++  document.body.appendChild(link);
++  link.click();
++  link.remove();
++  const button = event.currentTarget;
++  button.textContent = '다운로드 시작됨';
++  window.setTimeout(() => { button.textContent = 'PNG 다운로드'; }, 1400);
++});
+diff --git a/src/astral/jogakbo.js b/src/astral/jogakbo.js
+deleted file mode 100644
+index 932aa66..0000000
+--- a/src/astral/jogakbo.js
++++ /dev/null
+@@ -1,157 +0,0 @@
+-// 조각보 v2 (2026-10-10 팀 피드백 반영) — 면적 나눔을 먼저 고정하고, 8색 + 무채색으로 칠한다.
+-//  ① 면적: 12×12 격자 위에서 큰 조각부터 1/3~2/3 지점으로 자른다 (몬드리안식 격자). 시드 = pattern_seed → 같은 사람 = 같은 조각보
+-//  ② 색 배정 (면적 비율):
+-//       균형색 1조각 ≈ 10%  (Astral color_solution "전체의 10~15% 강조색")
+-//       보완색 4조각 ≈ 4%씩 (고유·재능·관계·균형의 보완색, 서버 palette8)
+-//       무채색 2조각 ≈ 5%씩 (명도를 바꿔 지백·연회색·먹회색·먹색 중)
+-//       나머지 = 오행 조각. 오행끼리의 면적비는 Astral visual_composition 그대로 (큰 조각부터 모자란 오행에)
+-//  ③ 조각 사이 선은 무채색 (밝은 팔레트면 먹색, 어두운 팔레트면 지백) → 색 차이가 작아도 조각이 또렷하다
+-//  Astral 이 계산한 4색 HEX 는 바꾸지 않는다. 보완색·무채색만 더한다.
+-
+-export const ELEMENTS = ["목", "화", "토", "금", "수"];
+-const STEM_ELEMENTS = { 갑: "목", 을: "목", 병: "화", 정: "화", 무: "토", 기: "토", 경: "금", 신: "금", 임: "수", 계: "수" };
+-const TOPIC_OFFSETS = { 비견: 0, 겁재: 0, 식신: 1, 상관: 1, 편재: 2, 정재: 2, 편관: 3, 정관: 3, 편인: 4, 정인: 4 };
+-const G = 12;
+-
+-function rng(seedHex) {
+-  let v = parseInt(seedHex.slice(0, 8), 16) || 1;
+-  return () => { v = (Math.imul(v, 1664525) + 1013904223) >>> 0; return v / 4294967296; };
+-}
+-const hexRgb = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+-const mix = (a, b, t) => "#" + hexRgb(a).map((x, i) => Math.round(x + (hexRgb(b)[i] - x) * t).toString(16).padStart(2, "0")).join("");
+-const lum = (h) => { const [r, g, b] = hexRgb(h).map((c) => { c /= 255; return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4; }); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
+-
+-// Astral 원본과 같은 규칙: 역할색을 그 오행에 놓고, 남은 오행은 오행 기본색
+-export function elementPalette(report) {
+-  const pal = { ...report.element_profile.element_colors };
+-  const day = report.colors.find((c) => c.role === "고유색");
+-  const dayEl = STEM_ELEMENTS[day.basis], di = ELEMENTS.indexOf(dayEl), used = new Set();
+-  for (const c of report.colors) {
+-    const el = c.role === "고유색" ? dayEl : c.role === "균형색" ? c.basis : ELEMENTS[(di + TOPIC_OFFSETS[c.basis]) % 5];
+-    if (!used.has(el)) { pal[el] = c.hex; used.add(el); }
+-  }
+-  return pal;
+-}
+-
+-// ① 면적 고정: 격자 분할
+-export function buildGrid(report) {
+-  const r = rng(report.pattern_seed);
+-  const target = report.visual_slot_count === 6 ? 13 : 16;
+-  let rects = [{ x: 0, y: 0, w: G, h: G }];
+-  let guard = 0;
+-  while (rects.length < target && guard++ < 200) {
+-    const cand = rects.filter((q) => q.w >= 4 || q.h >= 4).sort((a, b) => b.w * b.h - a.w * a.h || a.y - b.y || a.x - b.x);
+-    if (!cand.length) break;
+-    const q = cand[Math.min(cand.length - 1, r() < 0.7 ? 0 : 1)];
+-    const vertical = q.w > q.h ? true : q.h > q.w ? false : r() < 0.5;
+-    const len = vertical ? q.w : q.h;
+-    if (len < 4) continue;
+-    const lo = Math.max(2, Math.round(len / 3)), hi = Math.min(len - 2, Math.round((len * 2) / 3));
+-    const cut = lo + Math.floor(r() * (hi - lo + 1));
+-    rects = rects.filter((x) => x !== q);
+-    if (vertical) rects.push({ x: q.x, y: q.y, w: cut, h: q.h }, { x: q.x + cut, y: q.y, w: q.w - cut, h: q.h });
+-    else rects.push({ x: q.x, y: q.y, w: q.w, h: cut }, { x: q.x, y: q.y + cut, w: q.w, h: q.h - cut });
+-  }
+-  return rects.map((q, i) => ({ ...q, id: i, area: q.w * q.h }));
+-}
+-
+-const touches = (a, b) => (a.x === b.x + b.w || b.x === a.x + a.w) && a.y < b.y + b.h && b.y < a.y + a.h
+-  || (a.y === b.y + b.h || b.y === a.y + a.h) && a.x < b.x + b.w && b.x < a.x + a.w;
+-
+-// ② 색 배정
+-export function assign(report, rects) {
+-  const p8 = report.palette8, total = G * G, ep = elementPalette(report);
+-  const free = [...rects].sort((a, b) => b.area - a.area || a.id - b.id);
+-  const take = (goal, avoid = []) => {
+-    let best = null;
+-    for (const q of free) {
+-      if (q === free[0]) continue;                              // 가장 큰 조각은 오행(고유색 쪽)에 남긴다
+-      const pen = Math.abs(q.area - goal) + (avoid.some((o) => touches(o, q)) ? 3 : 0);
+-      if (!best || pen < best.pen) best = { q, pen };
+-    }
+-    if (!best) return null;
+-    free.splice(free.indexOf(best.q), 1);
+-    return best.q;
+-  };
+-  const out = [];
+-  const bal = report.colors.find((c) => c.role === "균형색");
+-  const qb = take(total * 0.10); if (qb) out.push({ ...qb, kind: "balance", hex: bal.hex, label: "균형색" });
+-  const placed = () => out;
+-  for (const c of p8.complement) { const q = take(total * 0.04, placed()); if (q) out.push({ ...q, kind: "complement", hex: c.hex, label: c.role }); }
+-  const neu = [p8.neutrals[0], p8.neutrals[report.pattern_seed.charCodeAt(3) % 2 ? 2 : 1]];
+-  for (const n of neu) { const q = take(total * 0.05, placed()); if (q) out.push({ ...q, kind: "neutral", hex: n.hex, label: n.name }); }
+-  // 나머지 = 오행 조각 (면적비 = visual_composition)
+-  const comp = report.visual_composition, elTotal = ELEMENTS.reduce((s, e) => s + comp[e], 0);
+-  const rest = free.reduce((s, q) => s + q.area, 0), got = Object.fromEntries(ELEMENTS.map((e) => [e, 0]));
+-  const dayEl = STEM_ELEMENTS[report.colors.find((c) => c.role === "고유색").basis];
+-  for (const q of free) {
+-    const els = ELEMENTS.filter((e) => comp[e] > 0);
+-    let el = els.sort((a, b) => (comp[b] / elTotal * rest - got[b]) - (comp[a] / elTotal * rest - got[a]) || (b === dayEl) - (a === dayEl))[0];
+-    if (q === free[0] && comp[dayEl] > 0) el = dayEl;           // 가장 큰 조각 = 고유색의 오행
+-    got[el] += q.area;
+-    out.push({ ...q, kind: "element", element: el, hex: ep[el], label: el });
+-  }
+-  // 같은 색끼리 맞닿으면 한쪽을 아주 조금 밝게 (조각이 하나로 붙어 보이지 않게)
+-  out.sort((a, b) => a.id - b.id);
+-  for (let i = 0; i < out.length; i++) for (let j = 0; j < i; j++)
+-    if (out[i].hex === out[j].hex && touches(out[i], out[j])) out[i] = { ...out[i], hex: mix(out[i].hex, "#ffffff", 0.14) };
+-  const share = Object.fromEntries(ELEMENTS.map((e) => [e, rest ? got[e] / rest : 0]));
+-  return { pieces: out, share, areas: { balance: qb ? qb.area / total : 0, complement: out.filter((p) => p.kind === "complement").reduce((s, p) => s + p.area, 0) / total, neutral: out.filter((p) => p.kind === "neutral").reduce((s, p) => s + p.area, 0) / total } };
+-}
+-
+-function linen(ctx, x, y, w, h, r) {
+-  ctx.save(); ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip();
+-  ctx.globalAlpha = 0.05; ctx.strokeStyle = "#000"; ctx.lineWidth = 1;
+-  for (let o = 2; o < w; o += 5) { ctx.beginPath(); ctx.moveTo(x + o, y); ctx.lineTo(x + o + (r() - 0.5) * 2, y + h); ctx.stroke(); }
+-  ctx.globalAlpha = 0.07; ctx.strokeStyle = "#fff";
+-  for (let o = 3; o < h; o += 6) { ctx.beginPath(); ctx.moveTo(x, y + o); ctx.lineTo(x + w, y + o + (r() - 0.5) * 2); ctx.stroke(); }
+-  ctx.restore();
+-}
+-
+-// ③ 그리기
+-export function draw(canvas, report) {
+-  const ctx = canvas.getContext("2d"), W = 1600, H = 2000, s = canvas.width / W;
+-  const rects = buildGrid(report), { pieces, share, areas } = assign(report, rects), r = rng(report.pattern_seed.slice(8));
+-  const p8 = report.palette8;
+-  const avgL = pieces.reduce((t, p) => t + lum(p.hex) * p.area, 0) / (G * G);
+-  const seam = avgL > 0.28 ? "#2E2C2A" : "#F3F0E9";
+-  ctx.setTransform(s, 0, 0, s, 0, 0);
+-  ctx.fillStyle = "#F6F4EF"; ctx.fillRect(0, 0, W, H);
+-  ctx.fillStyle = "#8B8579"; ctx.font = "500 24px 'IBM Plex Sans KR', Pretendard, sans-serif"; ctx.fillText("MaC  /  ASTRAL COLOR", 120, 100);
+-  ctx.textAlign = "right"; ctx.fillText(`No. ${report.pattern_seed.slice(0, 8).toUpperCase()}`, 1480, 100); ctx.textAlign = "left";
+-  ctx.fillStyle = "#24221F"; ctx.font = "700 60px 'Gowun Batang', 'Noto Serif KR', serif"; ctx.fillText("나의 색을 잇다", 120, 196);
+-  ctx.fillStyle = "#6E685E"; ctx.font = "26px 'IBM Plex Sans KR', Pretendard, sans-serif";
+-  ctx.fillText("고유색 넷과 보완색 넷, 그 사이를 잇는 무채색", 122, 244);
+-
+-  const ax = 120, ay = 300, A = 1360, line = 14, u = A / G;
+-  ctx.save(); ctx.shadowColor = "rgba(40,30,20,.18)"; ctx.shadowBlur = 30; ctx.shadowOffsetY = 12;
+-  ctx.fillStyle = seam; ctx.fillRect(ax - line, ay - line, A + line * 2, A + line * 2); ctx.restore();
+-  for (const p of pieces) {
+-    const x = ax + p.x * u + line / 2, y = ay + p.y * u + line / 2, w = p.w * u - line, h = p.h * u - line;
+-    const g = ctx.createLinearGradient(x, y, x + w, y + h);
+-    g.addColorStop(0, mix(p.hex, "#ffffff", 0.05)); g.addColorStop(1, mix(p.hex, "#000000", 0.04));
+-    ctx.fillStyle = g; ctx.fillRect(x, y, w, h);
+-    linen(ctx, x, y, w, h, r);
+-    ctx.save(); ctx.setLineDash([5, 6]); ctx.lineWidth = 1.4;
+-    ctx.strokeStyle = lum(p.hex) > 0.45 ? "rgba(46,44,42,.22)" : "rgba(255,255,255,.35)";
+-    ctx.strokeRect(x + 10, y + 10, w - 20, h - 20); ctx.restore();
+-  }
+-
+-  const chipRow = (title, items, y0) => {
+-    ctx.fillStyle = "#6E685E"; ctx.font = "600 22px 'IBM Plex Sans KR', Pretendard, sans-serif"; ctx.fillText(title, 120, y0);
+-    items.forEach((c, i) => {
+-      const x = 120 + i * 342, y = y0 + 18;
+-      ctx.fillStyle = c.hex; ctx.fillRect(x, y, 56, 56);
+-      ctx.strokeStyle = "rgba(0,0,0,.12)"; ctx.lineWidth = 1; ctx.strokeRect(x + .5, y + .5, 55, 55);
+-      ctx.fillStyle = "#8B8579"; ctx.font = "20px 'IBM Plex Sans KR', Pretendard, sans-serif"; ctx.fillText(c.role, x + 70, y + 22);
+-      ctx.fillStyle = "#24221F"; ctx.font = "22px 'IBM Plex Sans KR', Pretendard, sans-serif"; ctx.fillText(`${c.name}`, x + 70, y + 50);
+-    });
+-  };
+-  chipRow("고유색", p8.base, 1726);
+-  chipRow("보완색", p8.complement.map((c) => ({ ...c, role: c.role.replace(" 보완", "") })), 1826);
+-  ctx.fillStyle = "#8B8579"; ctx.font = "20px 'IBM Plex Sans KR', Pretendard, sans-serif";
+-  const ratio = ELEMENTS.filter((e) => report.visual_composition[e] > 0).map((e) => `${e} ${Math.round(share[e] * 100)}%`).join(" · ");
+-  ctx.fillText(`오행 조각 면적  ${ratio}   |   균형색 ${Math.round(areas.balance * 100)}% · 보완색 ${Math.round(areas.complement * 100)}% · 무채색 ${Math.round(areas.neutral * 100)}%`, 120, 1962);
+-  ctx.setTransform(1, 0, 0, 1, 0, 0);
+-  return { pieces, share, areas, seam };
+-}
+diff --git a/src/pages/Astral.jsx b/src/pages/Astral.jsx
+index 3afe348..47fcfb3 100644
+--- a/src/pages/Astral.jsx
++++ b/src/pages/Astral.jsx
+@@ -1,158 +1,32 @@
+-import { useEffect, useRef, useState } from "react";
+-import { api } from "../api.js";
+-import { draw, ELEMENTS } from "../astral/jogakbo.js";
+-
+-// Astral Color (사주 컬러) — 원본: github.com/ssebni/MaC_astral-color. 사주 계산·4색은 서버(astral_color 엔진)가 정한다.
+-// 이 화면은 보여 주기만 한다. 보완색 4·무채색 4는 서버 palette8 (계산기), 조각보는 jogakbo.js v2.
+-const STEM_EL = { 갑: "목", 을: "목", 병: "화", 정: "화", 무: "토", 기: "토", 경: "금", 신: "금", 임: "수", 계: "수" };
+-const BRANCH_EL = { 자: "수", 축: "토", 인: "목", 묘: "목", 진: "토", 사: "화", 오: "화", 미: "토", 신: "금", 유: "금", 술: "토", 해: "수" };
+-const STEM_HJ = { 갑: "甲", 을: "乙", 병: "丙", 정: "丁", 무: "戊", 기: "己", 경: "庚", 신: "辛", 임: "壬", 계: "癸" };
+-const BRANCH_HJ = { 자: "子", 축: "丑", 인: "寅", 묘: "卯", 진: "辰", 사: "巳", 오: "午", 미: "未", 신: "申", 유: "酉", 술: "戌", 해: "亥" };
+-const EL_INK = { 목: "#315846", 화: "#A64632", 토: "#806238", 금: "#596674", 수: "#244B63" };
+-
+-const EMPTY = { calendar_type: "solar", birth_date: "", is_leap_month: false, birth_time: "", time_unknown: false, birth_city: "", gender: "" };
+-
+-function Chip({ c, sub }) {
+-  return (
+-    <li className="as-chip">
+-      <span className="as-sw" style={{ background: c.hex }} />
+-      <span><span className="as-role">{sub || c.role}</span><b>{c.name}</b><span className="num as-hex">{c.hex}</span></span>
+-    </li>
+-  );
+-}
+-
++import { useEffect, useRef } from "react";
++import { API } from "../api.js";
++
++// 사주 색 탭 — 박세진님 Astral Color(github.com/ssebni/MaC_astral-color) 화면을 그대로 쓴다.
++// 화면·CSS·JS 는 public/astral/ 에 원본 그대로 두고, 바꾼 것은 두 가지뿐:
++//   ① API 주소를 ?api= 로 넘겨 백엔드(Railway)의 /api/astral, /api/astral/report-preview 를 부른다
++//   ② 탭 안에서는 원본 페이지의 자체 헤더를 숨긴다 (MaC 헤더가 이미 위에 있으므로)
++// iframe 은 MaC 헤더 아래 남은 화면을 꽉 채우고 안에서 스크롤한다.
++// (내용 높이만큼 늘리면 원본의 결제 창(<dialog>)이 긴 iframe 한가운데 떠서 화면 밖으로 나간다)
+ export default function Astral() {
+-  const [f, setF] = useState(EMPTY);
+-  const [free, setFree] = useState(null);
+-  const [rep, setRep] = useState(null);
+-  const [busy, setBusy] = useState("");
+-  const [err, setErr] = useState("");
+-  const cv = useRef(null);
+-  const [png, setPng] = useState("");
+-  const set = (k) => (e) => { const v = e.target.type === "checkbox" ? e.target.checked : e.target.value; setF((o) => ({ ...o, [k]: v })); setFree(null); setRep(null); };
+-
+-  async function run(kind) {
+-    setErr(""); setBusy(kind);
+-    try {
+-      const body = { ...f, birth_time: f.time_unknown ? "" : f.birth_time };
+-      if (kind === "free") { setFree(await api("/api/astral", { method: "POST", body })); setRep(null); }
+-      else setRep(await api("/api/astral/report-preview", { method: "POST", body }));
+-    } catch (e) { setErr(e.message); } finally { setBusy(""); }
+-  }
+-
++  const ref = useRef(null);
+   useEffect(() => {
+-    if (!rep || !cv.current) return;
+-    const go = () => { draw(cv.current, rep); setPng(cv.current.toDataURL("image/png")); };
+-    (document.fonts?.ready || Promise.resolve()).then(go);
+-  }, [rep]);
+-
+-  const p8 = rep?.palette8;
++    document.body.classList.add("astral-mode");
++    const fit = () => {
++      const el = ref.current;
++      if (!el) return;
++      const top = el.getBoundingClientRect().top + window.scrollY;
++      el.style.height = `${Math.max(560, window.innerHeight - top)}px`;
++    };
++    fit();
++    window.addEventListener("resize", fit);
++    return () => { window.removeEventListener("resize", fit); document.body.classList.remove("astral-mode"); };
++  }, []);
+   return (
+-    <section className="astral">
+-      <h1 className="title">사주로 찾는 나의 색</h1>
+-      <p className="lead">생년월일과 태어난 시각으로 사주 여덟 글자를 계산하고, 그 계산에 연결된 색을 보여 줍니다. 색은 언어 모델이 아니라 계산 규칙이 정합니다. 성격이나 미래를 확정하는 풀이가 아닙니다.</p>
+-
+-      <form className="as-form" onSubmit={(e) => { e.preventDefault(); run("free"); }}>
+-        <fieldset className="as-row">
+-          <legend className="sr">달력</legend>
+-          <label className="as-radio"><input type="radio" name="cal" value="solar" checked={f.calendar_type === "solar"} onChange={set("calendar_type")} /> 양력</label>
+-          <label className="as-radio"><input type="radio" name="cal" value="lunar" checked={f.calendar_type === "lunar"} onChange={set("calendar_type")} /> 음력</label>
+-          {f.calendar_type === "lunar" && <label className="as-radio"><input type="checkbox" checked={f.is_leap_month} onChange={set("is_leap_month")} /> 윤달</label>}
+-        </fieldset>
+-        <div className="as-grid">
+-          <label>생년월일<input id="as-date" type="date" required min="1900-01-01" max="2100-12-31" value={f.birth_date} onChange={set("birth_date")} /></label>
+-          <label>태어난 시각<input id="as-time" type="time" value={f.birth_time} disabled={f.time_unknown} required={!f.time_unknown} onChange={set("birth_time")} /></label>
+-          <label>태어난 시·군<input id="as-city" type="text" placeholder="예: 수원시" maxLength={40} required value={f.birth_city} onChange={set("birth_city")} /></label>
+-          <label>성별<select id="as-gender" required value={f.gender} onChange={set("gender")}><option value="">고르세요</option><option value="female">여성</option><option value="male">남성</option></select></label>
+-        </div>
+-        <label className="as-radio"><input type="checkbox" checked={f.time_unknown} onChange={set("time_unknown")} /> 태어난 시각을 모릅니다 (시주 없이 여섯 글자로 계산)</label>
+-        <div className="as-actions">
+-          <button className="primary" disabled={!!busy}>{busy === "free" ? "계산 중…" : "무료로 고유색 보기"}</button>
+-          <span className="hint">성별은 프로필에만 쓰고 계산에는 쓰지 않습니다. 입력은 저장하지 않습니다.</span>
+-        </div>
+-        {err && <p className="error" role="alert">{err}</p>}
+-      </form>
+-
+-      {free && (
+-        <div className="as-free">
+-          <div className="as-free-sw" style={{ background: free.free_result.color.hex }} />
+-          <div>
+-            <p className="meta">일주 {free.free_result.day_pillar} · 일간 {free.free_result.day_master}</p>
+-            <h2 className="as-h2">{free.free_result.color.name} <span className="num as-hex">{free.free_result.color.hex}</span></h2>
+-            <p>{free.free_result.description}</p>
+-            {free.notices?.map((n) => <p key={n} className="hint">{n}</p>)}
+-            <button className="ghost" onClick={() => run("report")} disabled={!!busy}>{busy === "report" ? "만드는 중…" : "상세 보고서 미리보기 · 테스트 (결제 없음)"}</button>
+-          </div>
+-        </div>
+-      )}
+-
+-      {rep && (
+-        <div className="as-report">
+-          <h2 className="sub">{rep.overview.headline}</h2>
+-          <p className="lead">{rep.overview.summary}</p>
+-
+-          <h3 className="as-h3">만세력</h3>
+-          <div className="as-pillars">
+-            {[["hour", "시주"], ["day", "일주"], ["month", "월주"], ["year", "연주"]].map(([k, label]) => {
+-              const v = rep.pillars[k];
+-              return (
+-                <div key={k} className={`as-pillar${k === "day" ? " me" : ""}`}>
+-                  <span className="as-plabel">{label}</span>
+-                  {v ? <>
+-                    <span className="as-char" style={{ background: rep.element_profile.element_colors[STEM_EL[v[0]]], color: EL_INK[STEM_EL[v[0]]] }}>{STEM_HJ[v[0]]}<small>{v[0]} · {STEM_EL[v[0]]}</small></span>
+-                    <span className="as-char" style={{ background: rep.element_profile.element_colors[BRANCH_EL[v[1]]], color: EL_INK[BRANCH_EL[v[1]]] }}>{BRANCH_HJ[v[1]]}<small>{v[1]} · {BRANCH_EL[v[1]]}</small></span>
+-                  </> : <span className="as-none">시각 미상</span>}
+-                </div>
+-              );
+-            })}
+-          </div>
+-
+-          <h3 className="as-h3">나의 색 여덟 가지</h3>
+-          <p className="hint" style={{ marginTop: 0 }}>위는 사주 계산에서 나온 고유색 넷, 아래는 각 색의 반대편 색상에서 명도를 벌려 만든 보완색 넷입니다. 함께 쓰면 비슷한 색끼리 뭉쳐 흐려 보이지 않습니다.</p>
+-          <div className="as-chiprows">
+-            <div><p className="as-rowtitle">고유색</p><ul className="as-chips">{p8.base.map((c) => <Chip key={c.role} c={c} />)}</ul></div>
+-            <div><p className="as-rowtitle">보완색</p><ul className="as-chips">{p8.complement.map((c) => <Chip key={c.role} c={c} sub={`${c.of}의 보완`} />)}</ul></div>
+-            <div><p className="as-rowtitle">잇는 무채색</p><ul className="as-chips small-chips">{p8.neutrals.map((c) => <Chip key={c.key} c={c} sub="무채색" />)}</ul></div>
+-          </div>
+-
+-          <h3 className="as-h3">조각보</h3>
+-          <div className="as-jogakbo">
+-            <canvas ref={cv} width={1600} height={2000} aria-label="사주 색 조각보" />
+-            <div className="as-jg-side">
+-              <p>면적은 격자로 먼저 나누고 색을 얹었습니다. 오행 조각의 면적비는 사주 구성 그대로이고, 균형색은 전체의 약 10%, 보완색과 무채색은 사이사이에 놓았습니다. 조각 사이 선은 무채색이라 비슷한 색도 또렷하게 갈라집니다.</p>
+-              <dl className="as-counts">
+-                {ELEMENTS.map((e) => (
+-                  <div key={e}><dt style={{ color: EL_INK[e] }}>{e}</dt><dd className="num">{rep.element_profile.counts[e]} / {rep.visual_slot_count}칸</dd></div>
+-                ))}
+-              </dl>
+-              {png && <a className="ghost" href={png} download={`astral-jogakbo-${rep.pattern_seed.slice(0, 8)}.png`}>조각보 PNG 저장</a>}
+-            </div>
+-          </div>
+-
+-          <h3 className="as-h3">오늘의 흐름 · {rep.today_fortune.date_kst}</h3>
+-          <div className="as-today">
+-            <span className="as-sw big" style={{ background: rep.today_fortune.today_color.hex }} />
+-            <div>
+-              <p><b>{rep.today_fortune.theme}</b> · {rep.today_fortune.today_color.name} · <span className="num">{rep.today_fortune.score}점</span></p>
+-              <p>{rep.today_fortune.reading}</p>
+-              <p className="hint">해 볼 일: {rep.today_fortune.recommended_action} · 살펴볼 점: {rep.today_fortune.check_point}</p>
+-            </div>
+-          </div>
+-
+-          <h3 className="as-h3">풀이</h3>
+-          <div className="as-reading">
+-            {rep.reading.map((s) => (
+-              <article key={s.key}>
+-                <h4>{s.title}</h4>
+-                <p className="hint">{s.evidence}</p>
+-                <p>{s.possibility} {s.strength}</p>
+-                <p className="hint">살펴볼 점: {s.watch} · 해 볼 일: {s.action}</p>
+-              </article>
+-            ))}
+-          </div>
+-          <p className="hint">{rep.disclaimer} 지금은 결제 없이 보는 테스트 미리보기입니다.</p>
+-        </div>
+-      )}
+-    </section>
++    <iframe
++      ref={ref}
++      className="astral-frame"
++      title="Astral Color · 사주로 찾는 나의 색"
++      src={`/astral/astral.html?api=${encodeURIComponent(API)}`}
++    />
+   );
+ }
+diff --git a/src/styles.css b/src/styles.css
+index 11c19f4..4709fe2 100644
+--- a/src/styles.css
++++ b/src/styles.css
+@@ -199,53 +199,8 @@ button { cursor: pointer; }
+ .grounding li { margin: 2px 0; }
+ .grounding .refs a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+ 
+-/* Astral Color (사주 컬러) */
+-.astral .as-form { max-width: 760px; display: grid; gap: 14px; }
+-.as-row { border: 0; padding: 0; margin: 0; display: flex; gap: 18px; flex-wrap: wrap; }
+-.as-radio { display: inline-flex; align-items: center; gap: 6px; font-size: 15px; }
+-.as-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
+-.as-grid label { display: grid; gap: 4px; font-size: 13px; color: var(--muted); }
+-.as-grid input, .as-grid select { background: var(--sheet); border: 1px solid var(--line); border-radius: 2px; padding: 10px 12px; font-size: 16px; color: var(--ink); }
+-.as-actions { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+-.as-actions .primary { margin-top: 0; }
+-.as-actions .hint { margin: 0; }
+-.as-free { display: grid; grid-template-columns: 160px minmax(0, 1fr); gap: 24px; margin: 40px 0 0; padding: 24px; background: var(--sheet); border: 1px solid var(--line); }
+-.as-free-sw { width: 160px; height: 160px; border: 1px solid color-mix(in srgb, var(--ink) 12%, transparent); }
+-.as-h2 { font: 700 26px/1.3 var(--serif); margin: 0 0 8px; }
+-.as-h3 { font: 700 19px/1.3 var(--serif); margin: 40px 0 14px; }
+-.as-hex { color: var(--muted); font-size: 13px; font-weight: 400; }
+-.as-pillars { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; max-width: 560px; }
+-.as-pillar { display: grid; gap: 6px; text-align: center; }
+-.as-pillar.me .as-plabel { color: var(--ink); font-weight: 600; }
+-.as-plabel { font-size: 13px; color: var(--muted); }
+-.as-char { display: grid; place-items: center; aspect-ratio: 1; font: 700 34px/1 var(--serif); border-radius: 2px; }
+-.as-char small { font: 400 11px/1 var(--sans); margin-top: -10px; opacity: .85; }
+-.as-none { display: grid; place-items: center; aspect-ratio: 1 / 2; border: 1px dashed var(--line); color: var(--muted); font-size: 13px; }
+-.as-chiprows { display: grid; gap: 18px; }
+-.as-rowtitle { margin: 0 0 8px; font-size: 13px; color: var(--muted); letter-spacing: .04em; }
+-.as-chips { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
+-.as-chip { display: flex; gap: 12px; align-items: center; background: var(--sheet); border: 1px solid var(--line); padding: 10px; }
+-.as-chip b { display: block; font-weight: 600; font-size: 15px; }
+-.as-role { display: block; font-size: 12px; color: var(--muted); }
+-.as-sw { width: 52px; height: 52px; flex: none; border: 1px solid color-mix(in srgb, var(--ink) 12%, transparent); }
+-.as-sw.big { width: 72px; height: 72px; }
+-.small-chips .as-sw { width: 32px; height: 32px; }
+-.small-chips .as-chip { padding: 6px 10px; }
+-.as-jogakbo { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 24px; align-items: start; }
+-.as-jogakbo canvas { width: 100%; height: auto; display: block; border: 1px solid var(--line); }
+-.as-jg-side { display: grid; gap: 14px; font-size: 14px; color: var(--muted); }
+-.as-counts { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin: 0; }
+-.as-counts div { text-align: center; background: var(--sheet); border: 1px solid var(--line); padding: 6px 0; }
+-.as-counts dt { font: 700 18px/1.2 var(--serif); }
+-.as-counts dd { margin: 0; font-size: 12px; }
+-.as-today { display: flex; gap: 16px; align-items: flex-start; }
+-.as-today p { margin: 0 0 6px; }
+-.as-reading { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
+-.as-reading article { background: var(--sheet); border: 1px solid var(--line); padding: 16px; }
+-.as-reading h4 { margin: 0 0 6px; font: 700 16px/1.4 var(--serif); }
+-.as-reading p { margin: 0 0 6px; font-size: 14px; }
+-@media (max-width: 760px) {
+-  .as-free { grid-template-columns: 1fr; }
+-  .as-free-sw { width: 100%; height: 96px; }
+-  .as-jogakbo { grid-template-columns: minmax(0, 1fr); }
+-}
++
++/* 사주 색 탭: 박세진님 Astral Color 화면(public/astral/astral.html)을 그대로 띄운다. 화면 폭 전체 사용 */
++.astral-frame { display: block; width: 100vw; margin: -48px 0 0 calc(50% - 50vw); border: 0; background: #f3efe8; }
++body.astral-mode .main { padding-bottom: 0; min-height: 0; }
++body.astral-mode .foot { display: none; }
