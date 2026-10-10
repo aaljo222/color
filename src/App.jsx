@@ -8,8 +8,9 @@ import Vault from "./pages/Vault.jsx";
 import Login from "./pages/Login.jsx";
 import Signup from "./pages/Signup.jsx";
 import Concierge from "./pages/Concierge.jsx";
+import Astral from "./pages/Astral.jsx";
 
-const NAV = [["/", "기억 표본"], ["/palette", "색 문장"], ["/tools", "색 변환"], ["/vault", "내 보관함"], ["/concierge", "문의"]];
+const NAV = [["/", "기억 표본"], ["/palette", "색 문장"], ["/tools", "색 변환"], ["/astral", "사주 색"], ["/vault", "내 보관함"], ["/concierge", "문의"]];
 
 export default function App() {
   const { user } = useAuth();
@@ -45,6 +46,7 @@ export default function App() {
           <Route path="/" element={<Memory />} />
           <Route path="/palette" element={<Palette />} />
           <Route path="/tools" element={<Tools />} />
+          <Route path="/astral" element={<Astral />} />
           <Route path="/vault" element={<Vault />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />

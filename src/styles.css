@@ -198,3 +198,54 @@ button { cursor: pointer; }
 .grounding ul { margin: 6px 0 0; padding-left: 18px; }
 .grounding li { margin: 2px 0; }
 .grounding .refs a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+
+/* Astral Color (사주 컬러) */
+.astral .as-form { max-width: 760px; display: grid; gap: 14px; }
+.as-row { border: 0; padding: 0; margin: 0; display: flex; gap: 18px; flex-wrap: wrap; }
+.as-radio { display: inline-flex; align-items: center; gap: 6px; font-size: 15px; }
+.as-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
+.as-grid label { display: grid; gap: 4px; font-size: 13px; color: var(--muted); }
+.as-grid input, .as-grid select { background: var(--sheet); border: 1px solid var(--line); border-radius: 2px; padding: 10px 12px; font-size: 16px; color: var(--ink); }
+.as-actions { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.as-actions .primary { margin-top: 0; }
+.as-actions .hint { margin: 0; }
+.as-free { display: grid; grid-template-columns: 160px minmax(0, 1fr); gap: 24px; margin: 40px 0 0; padding: 24px; background: var(--sheet); border: 1px solid var(--line); }
+.as-free-sw { width: 160px; height: 160px; border: 1px solid color-mix(in srgb, var(--ink) 12%, transparent); }
+.as-h2 { font: 700 26px/1.3 var(--serif); margin: 0 0 8px; }
+.as-h3 { font: 700 19px/1.3 var(--serif); margin: 40px 0 14px; }
+.as-hex { color: var(--muted); font-size: 13px; font-weight: 400; }
+.as-pillars { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; max-width: 560px; }
+.as-pillar { display: grid; gap: 6px; text-align: center; }
+.as-pillar.me .as-plabel { color: var(--ink); font-weight: 600; }
+.as-plabel { font-size: 13px; color: var(--muted); }
+.as-char { display: grid; place-items: center; aspect-ratio: 1; font: 700 34px/1 var(--serif); border-radius: 2px; }
+.as-char small { font: 400 11px/1 var(--sans); margin-top: -10px; opacity: .85; }
+.as-none { display: grid; place-items: center; aspect-ratio: 1 / 2; border: 1px dashed var(--line); color: var(--muted); font-size: 13px; }
+.as-chiprows { display: grid; gap: 18px; }
+.as-rowtitle { margin: 0 0 8px; font-size: 13px; color: var(--muted); letter-spacing: .04em; }
+.as-chips { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
+.as-chip { display: flex; gap: 12px; align-items: center; background: var(--sheet); border: 1px solid var(--line); padding: 10px; }
+.as-chip b { display: block; font-weight: 600; font-size: 15px; }
+.as-role { display: block; font-size: 12px; color: var(--muted); }
+.as-sw { width: 52px; height: 52px; flex: none; border: 1px solid color-mix(in srgb, var(--ink) 12%, transparent); }
+.as-sw.big { width: 72px; height: 72px; }
+.small-chips .as-sw { width: 32px; height: 32px; }
+.small-chips .as-chip { padding: 6px 10px; }
+.as-jogakbo { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 24px; align-items: start; }
+.as-jogakbo canvas { width: 100%; height: auto; display: block; border: 1px solid var(--line); }
+.as-jg-side { display: grid; gap: 14px; font-size: 14px; color: var(--muted); }
+.as-counts { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin: 0; }
+.as-counts div { text-align: center; background: var(--sheet); border: 1px solid var(--line); padding: 6px 0; }
+.as-counts dt { font: 700 18px/1.2 var(--serif); }
+.as-counts dd { margin: 0; font-size: 12px; }
+.as-today { display: flex; gap: 16px; align-items: flex-start; }
+.as-today p { margin: 0 0 6px; }
+.as-reading { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
+.as-reading article { background: var(--sheet); border: 1px solid var(--line); padding: 16px; }
+.as-reading h4 { margin: 0 0 6px; font: 700 16px/1.4 var(--serif); }
+.as-reading p { margin: 0 0 6px; font-size: 14px; }
+@media (max-width: 760px) {
+  .as-free { grid-template-columns: 1fr; }
+  .as-free-sw { width: 100%; height: 96px; }
+  .as-jogakbo { grid-template-columns: minmax(0, 1fr); }
+}
