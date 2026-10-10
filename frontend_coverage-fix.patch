@@ -1,0 +1,32 @@
+From 43acfdabbfcdb450333678f06c4c332c38decb6b Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?=EC=9D=B4=EC=9E=AC=EC=98=A4?= <aaljo2@gmail.com>
+Date: Sat, 10 Oct 2026 11:31:43 +0000
+Subject: [PATCH] =?UTF-8?q?=EB=8C=80=ED=91=9C=EB=8F=84=20=EC=86=8C?=
+ =?UTF-8?q?=EC=88=98=201=EC=9E=90=EB=A6=AC=20=ED=91=9C=EC=8B=9C=20(79.9%?=
+ =?UTF-8?q?=20=E2=86=92=20'80%'=20=EC=98=A4=ED=95=B4=20=EB=B0=A9=EC=A7=80)?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01MA6HLojYSgMbU3kiHDQXFK
+---
+ src/components/Specimen.jsx | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/components/Specimen.jsx b/src/components/Specimen.jsx
+index 8720df5..438cfe8 100644
+--- a/src/components/Specimen.jsx
++++ b/src/components/Specimen.jsx
+@@ -52,7 +52,7 @@ export default function Specimen({ data }) {
+         {v.status && (
+           <p className={`stamp ${v.status === "PASS" ? "ok" : "no"}`}>
+             {v.coverage != null
+-              ? `${v.status === "PASS" ? "심사 통과" : "심사 미통과"} · 4색이 그림의 ${Math.round(v.coverage * 100)}% 대표`
++              ? `${v.status === "PASS" ? "심사 통과" : "심사 미통과"} · 4색이 그림의 ${(Math.floor(v.coverage * 1000) / 10).toFixed(1)}% 대표`
+               : `${v.status === "PASS" ? "측정 일치" : "측정 불일치"} · 최대 ΔE00 ${Number(v.max_de00).toFixed(2)}`}
+           </p>
+         )}
+-- 
+2.43.0
+
