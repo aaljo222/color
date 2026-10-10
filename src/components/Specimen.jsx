@@ -59,7 +59,7 @@ export default function Specimen({ data }) {
         {data.grounding && <Grounding g={data.grounding} />}
         <p className="meta">
           {data.kb_version} / {data.engine_version}
-          {data.cache_hit ? " · 같은 기억이라 같은 표본" : ""}
+          {data.lock_via === "class" ? " · 같은 문장급이라 같은 표본" : data.cache_hit ? " · 같은 기억이라 같은 표본" : ""}
           {data.already_owned ? " · 이미 보관함에 있음" : ""}
         </p>
       </div>
