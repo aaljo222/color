@@ -492,3 +492,10 @@ button:focus-visible, summary:focus-visible { outline: 2px solid #967348; outlin
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
 }
+
+/* 8색 조각보 칩: 고유색 4 / 보완색 4 */
+.pattern-area-legend:has(.pattern-chip-row) { display: grid; gap: 10px; }
+.pattern-chip-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+.pattern-chip-row b { width: 46px; color: #8a7c69; font-size: 11px; font-weight: 600; }
+.pattern-chip-row span { display: flex; gap: 6px; align-items: center; color: #4f4537; font-size: 12px; }
+.pattern-chip-row i { width: 16px; height: 16px; border-radius: 3px; box-shadow: inset 0 0 0 1px rgba(40,30,20,.16); }

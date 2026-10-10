@@ -266,7 +266,166 @@
     return { layout, palette };
   }
 
-  const api = { ELEMENTS, paletteForReport, buildLayout, draw };
+  /* ── 8색 조각보 (2026-10-10 팀 피드백, 김외진) ─────────────────────────────
+   * · 면적 나눔을 먼저 고정한다 (몬드리안식 12×12 격자 1장, seed 로 좌우·상하 반전만 고른다)
+   * · 고유색 4 + 보완색 4 = 8색, 사이사이 무채색(흰·회) 조각으로 명도를 바꿔 섞는다
+   * · 조각 사이 선은 무채색(먹색)으로 감싸 색 차이가 작은 것을 상쇄한다
+   * 색 HEX 는 서버(palette8)가 정한 값을 그대로 쓴다. 여기서는 배치·그리기만 한다. */
+  // [x, y, w, h, slot]  slot: b0~b3 = 고유색(고유·재능·관계·균형), c0~c3 = 보완색, n1~n2 = 무채색
+  const GRID8 = [
+    [0, 0, 6, 5, 'b0'], [6, 0, 2, 5, 'n0'], [8, 0, 4, 5, 'c1'],
+    [0, 5, 3, 4, 'c0'], [3, 5, 6, 4, 'b1'], [9, 5, 3, 2, 'n1'], [9, 7, 3, 2, 'c3'],
+    [0, 9, 5, 3, 'b2'], [5, 9, 1, 3, 'n2'], [6, 9, 3, 3, 'c2'], [9, 9, 3, 3, 'b3'],
+  ];
+  const LINE_INK = '#3F3C39';
+
+  function buildLayout8(report) {
+    const seed = parseInt(report.pattern_seed.slice(0, 8), 16) || 0;
+    const flipX = seed & 1;
+    const flipY = (seed >> 1) & 1;
+    return GRID8.map(([x, y, w, h, slot]) => ({
+      slot,
+      x: (flipX ? 12 - x - w : x) / 12,
+      y: (flipY ? 12 - y - h : y) / 12,
+      width: w / 12,
+      height: h / 12,
+    }));
+  }
+
+  function slotColor(slot, p8) {
+    const index = Number(slot[1]);
+    if (slot[0] === 'b') return p8.base[index].hex;
+    if (slot[0] === 'c') return p8.complement[index].hex;
+    return [p8.neutrals[0].hex, p8.neutrals[1].hex, p8.neutrals[2].hex][index];
+  }
+
+  function drawPatch(context, rectangle, color) {
+    const { x, y, width, height } = rectangle;
+    context.save();
+    context.beginPath();
+    context.rect(x, y, width, height);
+    context.clip();
+    const silk = context.createLinearGradient(x, y, x + width, y + height);
+    silk.addColorStop(0, mix(color, '#ffffff', .07));
+    silk.addColorStop(.55, color);
+    silk.addColorStop(1, mix(color, '#2a2420', .06));
+    context.fillStyle = silk;
+    context.fillRect(x, y, width, height);
+    // 모시 결: 아주 옅게 (색이 먼저 보이게)
+    for (let offset = 2; offset < width; offset += 4) {
+      context.fillStyle = offset % 12 < 4 ? 'rgba(255,255,255,.05)' : 'rgba(30,20,10,.025)';
+      context.fillRect(x + offset, y, .8, height);
+    }
+    for (let offset = 3; offset < height; offset += 5) {
+      context.fillStyle = 'rgba(255,255,255,.045)';
+      context.fillRect(x, y + offset, width, .9);
+    }
+    // 쌈솔 바느질 한 줄
+    context.setLineDash([5, 6]);
+    context.strokeStyle = 'rgba(255,255,255,.38)';
+    context.lineWidth = 1.2;
+    context.strokeRect(x + 12, y + 12, Math.max(0, width - 24), Math.max(0, height - 24));
+    context.restore();
+  }
+
+  function drawChipRow(context, label, colors, y) {
+    context.fillStyle = '#8a7c69';
+    context.font = '600 21px Pretendard, Arial, sans-serif';
+    context.fillText(label, 120, y + 28);
+    colors.forEach((color, index) => {
+      const x = 270 + index * 305;
+      context.fillStyle = color.hex;
+      context.fillRect(x, y, 46, 46);
+      context.strokeStyle = 'rgba(40,30,20,.16)';
+      context.lineWidth = 1;
+      context.strokeRect(x + .5, y + .5, 45, 45);
+      context.fillStyle = '#3d3933';
+      context.font = '500 22px Pretendard, Arial, sans-serif';
+      context.fillText(color.name, x + 60, y + 19);
+      context.fillStyle = '#8f8270';
+      context.font = '19px Pretendard, Arial, sans-serif';
+      context.fillText(`${color.role.replace(' 보완', '')} · ${color.hex}`, x + 60, y + 44);
+    });
+  }
+
+  function draw8(canvas, report) {
+    const p8 = report.palette8;
+    const context = canvas.getContext('2d');
+    const layout = buildLayout8(report);
+    const { width, height } = canvas;
+    const unit = width / 1600;
+    context.clearRect(0, 0, width, height);
+    context.save();
+    context.scale(unit, unit);
+    context.fillStyle = '#fbf8f2';
+    context.fillRect(0, 0, 1600, height / unit);
+
+    context.fillStyle = '#91734f';
+    context.font = '500 26px Arial, sans-serif';
+    context.fillText('MaC   /   CHROMATIC ATELIER', 120, 104);
+    context.textAlign = 'right';
+    context.fillStyle = '#8c8071';
+    context.font = '24px Georgia, serif';
+    context.fillText('Astral Color', 1480, 104);
+    context.textAlign = 'left';
+    context.fillStyle = '#37342e';
+    context.font = '500 62px Pretendard, Arial, sans-serif';
+    context.fillText('나의 색을 잇다', 120, 205);
+    context.fillStyle = '#857a6d';
+    context.font = '26px Pretendard, Arial, sans-serif';
+    context.fillText('고유색 넷과 보완색 넷, 무채색으로 이은 한 장의 보자기', 122, 255);
+
+    const artX = 120;
+    const artY = 316;
+    const artSize = 1360;
+    const frame = 26;      // 바깥 둘레 (먹색)
+    const seam = 12;       // 조각 사이 선 (먹색)
+    const inner = artSize - frame * 2;
+    context.save();
+    context.shadowColor = 'rgba(60,45,30,.2)';
+    context.shadowBlur = 30;
+    context.shadowOffsetY = 12;
+    context.fillStyle = LINE_INK;
+    context.fillRect(artX, artY, artSize, artSize);
+    context.restore();
+    layout.forEach((piece) => {
+      const x0 = artX + frame + piece.x * inner;
+      const y0 = artY + frame + piece.y * inner;
+      const x1 = x0 + piece.width * inner;
+      const y1 = y0 + piece.height * inner;
+      const half = seam / 2;
+      const left = piece.x === 0 ? 0 : half;
+      const top = piece.y === 0 ? 0 : half;
+      const right = piece.x + piece.width >= .999 ? 0 : half;
+      const bottom = piece.y + piece.height >= .999 ? 0 : half;
+      drawPatch(context, { x: x0 + left, y: y0 + top, width: x1 - x0 - left - right, height: y1 - y0 - top - bottom },
+        slotColor(piece.slot, p8));
+    });
+    // 바깥 둘레 안쪽 바느질
+    context.setLineDash([4, 6]);
+    context.strokeStyle = 'rgba(255,255,255,.35)';
+    context.lineWidth = 1.4;
+    context.strokeRect(artX + 11, artY + 11, artSize - 22, artSize - 22);
+    context.setLineDash([]);
+
+    context.fillStyle = '#6f6354';
+    context.font = '27px Pretendard, Arial, sans-serif';
+    context.fillText(report.pattern_family?.name || '나만의 조각보', 120, 1738);
+    context.textAlign = 'right';
+    context.fillStyle = '#9a8a75';
+    context.font = '23px Georgia, serif';
+    context.fillText(`No. ${report.pattern_seed.slice(0, 8).toUpperCase()}`, 1480, 1738);
+    context.textAlign = 'left';
+    drawChipRow(context, '고유색 4', p8.base, 1784);
+    drawChipRow(context, '보완색 4', p8.complement, 1860);
+    context.fillStyle = '#9a8b77';
+    context.font = '20px Pretendard, Arial, sans-serif';
+    context.fillText('무채색  지백 · 연회색 · 먹회색 · 먹색   /   보완색 = 색상환 반대편, 명도를 원색에서 멀리', 120, 1962);
+    context.restore();
+    return { layout, palette8: p8 };
+  }
+
+  const api = { ELEMENTS, paletteForReport, buildLayout, draw, buildLayout8, draw8 };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.AstralJogakbo = api;
 }(typeof globalThis !== 'undefined' ? globalThis : this));

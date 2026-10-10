@@ -161,9 +161,31 @@ function hexAlpha(hex, alpha) {
 
 function drawPattern(report) {
   const canvas = document.getElementById('patternCanvas');
-  const { palette } = AstralJogakbo.draw(canvas, report);
   const legend = document.getElementById('patternAreaLegend');
   legend.innerHTML = '';
+  if (report.palette8) {
+    // 8색 조각보: 고유색 4 / 보완색 4 칩 (팀 피드백 2026-10-10)
+    AstralJogakbo.draw8(canvas, report);
+    document.querySelector('.pattern-source-note').textContent = '한국 조각보의 면 분할과 모시의 결, 쌈솔에서 영감을 받아 몬드리안식 고정 격자로 새로 그린 디지털 작품입니다.';
+    [['고유색', report.palette8.base], ['보완색', report.palette8.complement]].forEach(([label, colors]) => {
+      const row = document.createElement('div');
+      row.className = 'pattern-chip-row';
+      const title = document.createElement('b');
+      title.textContent = label;
+      row.appendChild(title);
+      colors.forEach((color) => {
+        const item = document.createElement('span');
+        const dot = document.createElement('i');
+        dot.style.backgroundColor = color.hex;
+        item.title = `${color.role} ${color.hex}`;
+        item.append(dot, document.createTextNode(color.name));
+        row.appendChild(item);
+      });
+      legend.appendChild(row);
+    });
+    return;
+  }
+  const { palette } = AstralJogakbo.draw(canvas, report);
   AstralJogakbo.ELEMENTS.forEach((element) => {
     const item = document.createElement('span');
     const dot = document.createElement('i');
@@ -487,7 +509,9 @@ function renderPaidReport(report) {
   document.getElementById('patternFamily').textContent = `${report.pattern_family.name} · ${report.pattern_family.inspiration}`;
   renderFortune(report.today_fortune);
   const counts = Object.entries(report.visual_composition).map(([element, count]) => `${element} ${count}`).join(' · ');
-  document.getElementById('compositionNote').textContent = `내부 패치 면적은 ${report.visual_slot_count}칸 오행 구성(${counts})의 비율을 따릅니다. 둘레와 바탕은 4색으로 연결합니다. 이미지용 비율이며 강약·용신 판단 수치는 아닙니다.`;
+  document.getElementById('compositionNote').textContent = report.palette8
+    ? '조각 면적은 고정된 격자로 나누고, 큰 조각부터 고유색·재능색·관계색·균형색을 놓았습니다. 보완색 4개와 무채색 조각을 사이사이 섞고, 조각 사이 선은 먹색으로 감쌌습니다. 이미지용 구성이며 강약·용신 판단 수치는 아닙니다.'
+    : `내부 패치 면적은 ${report.visual_slot_count}칸 오행 구성(${counts})의 비율을 따릅니다. 둘레와 바탕은 4색으로 연결합니다. 이미지용 비율이며 강약·용신 판단 수치는 아닙니다.`;
   document.getElementById('paidDisclaimer').textContent = report.disclaimer;
   document.querySelector('.test-badge').textContent = '개발용 테스트 결제';
   paidReport.hidden = false;
