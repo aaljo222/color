@@ -159,14 +159,52 @@ function hexAlpha(hex, alpha) {
   return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
 }
 
+const STYLE_STORAGE_KEY = 'mac-astral-jogakbo-style';
+function readStyleChoice() {
+  try { return localStorage.getItem(STYLE_STORAGE_KEY); } catch (error) { return null; }
+}
+function saveStyleChoice(key) {
+  try { localStorage.setItem(STYLE_STORAGE_KEY, key); } catch (error) { /* 저장 못 해도 화면은 그대로 */ }
+}
+
 function drawPattern(report) {
   const canvas = document.getElementById('patternCanvas');
   const legend = document.getElementById('patternAreaLegend');
   legend.innerHTML = '';
+  const picker = document.getElementById('patternStylePicker');
+  picker.innerHTML = '';
+  picker.hidden = !report.palette8;
   if (report.palette8) {
-    // 8색 조각보: 고유색 4 / 보완색 4 칩 (팀 피드백 2026-10-10)
-    AstralJogakbo.draw8(canvas, report);
-    document.querySelector('.pattern-source-note').textContent = '한국 조각보의 면 분할과 모시의 결, 쌈솔에서 영감을 받아 몬드리안식 고정 격자로 새로 그린 디지털 작품입니다.';
+    // 8색 조각보: 형태 10가지를 모두 그 사람의 색으로 보여주고, 고른 형태로 크게 그린다 (팀 피드백 2026-10-11)
+    let chosen = readStyleChoice();
+    if (!AstralJogakbo.STYLES.some((style) => style.key === chosen)) chosen = AstralJogakbo.STYLES[0].key;
+    const buttons = AstralJogakbo.STYLES.map((style, index) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'pattern-style-option';
+      button.setAttribute('role', 'radio');
+      button.dataset.style = style.key;
+      button.title = style.desc;
+      const thumb = document.createElement('canvas');
+      thumb.width = 240;
+      thumb.height = 240;
+      AstralJogakbo.drawThumb(thumb, report, style.key);
+      const label = document.createElement('span');
+      label.textContent = `${index + 1}. ${style.name}`;
+      button.append(thumb, label);
+      button.addEventListener('click', () => select(style.key));
+      picker.appendChild(button);
+      return button;
+    });
+    function select(key) {
+      chosen = key;
+      saveStyleChoice(key);
+      buttons.forEach((button) => button.setAttribute('aria-checked', String(button.dataset.style === key)));
+      const { style } = AstralJogakbo.draw8(canvas, report, key);
+      document.getElementById('patternFamily').textContent = `${style.name} · ${style.desc}`;
+    }
+    select(chosen);
+    document.querySelector('.pattern-source-note').textContent = '한국 조각보의 면 분할과 모시의 결, 쌈솔에서 영감을 받아 새로 그린 디지털 작품입니다. 형태는 고를 수 있고, 색은 사주 계산값 그대로입니다.';
     [['고유색', report.palette8.base], ['보완색', report.palette8.complement]].forEach(([label, colors]) => {
       const row = document.createElement('div');
       row.className = 'pattern-chip-row';
@@ -506,11 +544,11 @@ function renderPaidReport(report) {
   renderStyling(report);
   renderPaidColors(report.colors);
   drawPattern(report);
-  document.getElementById('patternFamily').textContent = `${report.pattern_family.name} · ${report.pattern_family.inspiration}`;
+  if (!report.palette8) document.getElementById('patternFamily').textContent = `${report.pattern_family.name} · ${report.pattern_family.inspiration}`;
   renderFortune(report.today_fortune);
   const counts = Object.entries(report.visual_composition).map(([element, count]) => `${element} ${count}`).join(' · ');
   document.getElementById('compositionNote').textContent = report.palette8
-    ? '조각 면적은 고정된 격자로 나누고, 큰 조각부터 고유색·재능색·관계색·균형색을 놓았습니다. 보완색 4개와 무채색 조각을 사이사이 섞고, 조각 사이 선은 먹색으로 감쌌습니다. 이미지용 구성이며 강약·용신 판단 수치는 아닙니다.'
+    ? '위의 10가지 형태 중 하나를 고르면 조각보가 그 형태로 바뀝니다. 고유색 4개와 보완색 4개, 무채색 조각을 섞고 조각 사이 선은 먹색으로 감쌌습니다. 이미지용 구성이며 강약·용신 판단 수치는 아닙니다.'
     : `내부 패치 면적은 ${report.visual_slot_count}칸 오행 구성(${counts})의 비율을 따릅니다. 둘레와 바탕은 4색으로 연결합니다. 이미지용 비율이며 강약·용신 판단 수치는 아닙니다.`;
   document.getElementById('paidDisclaimer').textContent = report.disclaimer;
   document.querySelector('.test-badge').textContent = '개발용 테스트 결제';

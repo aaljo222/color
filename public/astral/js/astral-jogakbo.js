@@ -296,7 +296,9 @@
     const index = Number(slot[1]);
     if (slot[0] === 'b') return p8.base[index].hex;
     if (slot[0] === 'c') return p8.complement[index].hex;
-    return [p8.neutrals[0].hex, p8.neutrals[1].hex, p8.neutrals[2].hex][index];
+    // 서버가 8색과 겹치지 않게 고른 조각용 무채색 (없으면 지백·연회색·먹회색)
+    const patch = p8.patch_neutrals || p8.neutrals.slice(0, 3);
+    return patch[index].hex;
   }
 
   function drawPatch(context, rectangle, color) {
@@ -348,10 +350,168 @@
     });
   }
 
-  function draw8(canvas, report) {
+
+  /* ── 조각보 형태 10가지 (2026-10-11, 팀 피드백: 격자 하나는 예쁘지 않다 → 사용자가 고른다) ──
+   * 모든 형태는 600×600 좌표에서 그린다. 큰 그림·작은 미리보기 모두 같은 함수를 배율만 바꿔 부른다.
+   * 색은 서버 palette8 그대로: B=고유색 4, C=보완색 4, N=조각용 무채색 3, W=가장 밝은 무채색. 선은 먹색. */
+  const S6 = 600;
+  function styleColors(p8) {
+    const patch = (p8.patch_neutrals || p8.neutrals.slice(0, 3)).map((n) => n.hex);
+    const white = patch.includes('#F3F0E9') ? '#F3F0E9' : patch[0];
+    return { B: p8.base.map((c) => c.hex), C: p8.complement.map((c) => c.hex), N: patch, W: white, INK: LINE_INK };
+  }
+  function weave(g, path) {
+    g.save();
+    g.clip(path);
+    for (let x = 0; x < S6; x += 4) { g.fillStyle = x % 12 < 4 ? 'rgba(255,255,255,.05)' : 'rgba(30,20,10,.03)'; g.fillRect(x, 0, .8, S6); }
+    for (let y = 0; y < S6; y += 5) { g.fillStyle = 'rgba(255,255,255,.05)'; g.fillRect(0, y, S6, .9); }
+    g.restore();
+  }
+  function patch6(g, path, color, P, seam = 5) {
+    g.fillStyle = color;
+    g.fill(path);
+    weave(g, path);
+    g.lineWidth = seam;
+    g.lineJoin = 'round';
+    g.strokeStyle = P.INK;
+    g.stroke(path);
+  }
+  function rect6(x, y, w, h) { const p = new Path2D(); p.rect(x, y, w, h); return p; }
+  function lum(hex) { const n = parseInt(hex.slice(1), 16); return .3 * (n >> 16) + .59 * ((n >> 8) & 255) + .11 * (n & 255); }
+
+  const STYLES = [
+    { key: 'pinwheel', name: '바람개비', desc: '가운데 고유색을 네 띠가 돌아가며 감싼다', turn: true, draw(g, P) {
+      const { B, C, N } = P; const a = S6 * .3; const m = (S6 - a) / 2; const h = m / 2;
+      [[[0, 0, m + a, h], [0, h, m + a, h]], [[S6 - h, 0, h, m + a], [m + a, 0, h, m + a]],
+        [[m, S6 - h, m + a, h], [m, m + a, m + a, h]], [[0, m, h, m + a], [h, m, h, m + a]]]
+        .forEach(([o, i], k) => { patch6(g, rect6(...o), B[(k + 1) % 4], P); patch6(g, rect6(...i), C[k], P); });
+      patch6(g, rect6(m, m, a, a), B[0], P);
+      const q = a * .36; patch6(g, rect6(m + (a - q) / 2, m + (a - q) / 2, q, q), N[2], P);
+    } },
+    { key: 'frames', name: '액자 넷', desc: '네 칸마다 고유색 → 보완색 → 무채색 액자', draw(g, P) {
+      const { B, C, N, W } = P; const h = S6 / 2;
+      [[0, 0], [h, 0], [0, h], [h, h]].forEach(([x, y], k) => {
+        patch6(g, rect6(x, y, h, h), B[k], P);
+        patch6(g, rect6(x + h * .17, y + h * .12, h * .66, h * .66), C[k], P);
+        patch6(g, rect6(x + h * .33, y + h * .24, h * .34, h * .34), [W, N[0], N[1], W][k], P);
+      });
+    } },
+    { key: 'triangles', name: '삼각 조각', desc: '삼각 조각 32개가 다이아몬드 무늬를 만든다', turn: true, draw(g, P, rand) {
+      const { B, C, N, W } = P; const n = 4; const c = S6 / n;
+      const pool = [...Array(6).fill(B[0]), ...Array(5).fill(B[1]), ...Array(5).fill(B[2]), ...Array(4).fill(B[3]), ...C, ...C, W, N[0], N[1], N[2]];
+      for (let i = pool.length - 1; i > 0; i -= 1) { const j = Math.floor(rand() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
+      let k = 0;
+      for (let y = 0; y < n; y += 1) for (let x = 0; x < n; x += 1) {
+        const X = x * c; const Y = y * c; const t1 = new Path2D(); const t2 = new Path2D();
+        if ((x + y) % 2) { t1.moveTo(X, Y); t1.lineTo(X + c, Y); t1.lineTo(X, Y + c); t2.moveTo(X + c, Y); t2.lineTo(X + c, Y + c); t2.lineTo(X, Y + c); }
+        else { t1.moveTo(X, Y); t1.lineTo(X + c, Y); t1.lineTo(X + c, Y + c); t2.moveTo(X, Y); t2.lineTo(X, Y + c); t2.lineTo(X + c, Y + c); }
+        t1.closePath(); t2.closePath();
+        patch6(g, t1, pool[k++], P, 4); patch6(g, t2, pool[k++], P, 4);
+      }
+    } },
+    { key: 'logcabin', name: '로그캐빈', desc: '가운데부터 띠를 감아 나간다. 밝은 색 위·오른쪽, 짙은 색 아래·왼쪽', turn: true, draw(g, P) {
+      const { B, C, N, W } = P;
+      const sorted = [...B.slice(0, 2), B[3], ...C, W, ...N].sort((a, b) => lum(b) - lum(a));
+      const light = sorted.slice(0, 6); const dark = sorted.slice(6);
+      const w = S6 / 7; let x = 3 * w; let y = 3 * w; let bw = w; let bh = w; let li = 0; let di = 0;
+      patch6(g, rect6(x, y, w, w), B[2], P);
+      for (let k = 0; k < 3; k += 1) {
+        patch6(g, rect6(x, y - w, bw, w), light[li++], P); y -= w; bh += w;
+        patch6(g, rect6(x + bw, y, w, bh), light[li++], P); bw += w;
+        patch6(g, rect6(x, y + bh, bw, w), dark[di++], P); bh += w;
+        patch6(g, rect6(x - w, y, w, bh), dark[di++], P); x -= w; bw += w;
+      }
+    } },
+    { key: 'saekdong', name: '색동 띠', desc: '색동저고리처럼 가로 띠, 사이사이 가는 무채색 띠', draw(g, P) {
+      const { B, C, N, W } = P;
+      const seq = [[B[0], 3], [C[2], 1.2], [W, .45], [B[2], 2.2], [C[1], 1.4], [N[1], .45], [B[1], 2.4], [C[0], 1.3], [W, .45], [B[3], 2.2], [C[3], 1.2], [N[2], .45], [B[0], 1.6]];
+      const total = seq.reduce((sum, item) => sum + item[1], 0); let y = 0;
+      seq.forEach(([color, weight]) => { const h = weight / total * S6; patch6(g, rect6(0, y, S6, h), color, P, 4); y += h; });
+    } },
+    { key: 'moon', name: '사분원 달', desc: '고유색 네 칸 위에 보완색 고리가 모여 보름달 하나', draw(g, P) {
+      const { B, C, N, W } = P; const h = S6 / 2;
+      [[0, 0], [h, 0], [h, h], [0, h]].forEach(([x, y], k) => {
+        patch6(g, rect6(x, y, h, h), B[k], P);
+        const a0 = [Math.PI, 1.5 * Math.PI, 0, .5 * Math.PI][k];
+        const ring = (r, color) => { const p = new Path2D(); p.moveTo(h, h); p.arc(h, h, r, a0, a0 + Math.PI / 2); p.closePath(); patch6(g, p, color, P); };
+        ring(h * .82, C[k]); ring(h * .5, [W, N[0], W, N[0]][k]); ring(h * .24, B[(k + 2) % 4]);
+      });
+    } },
+    { key: 'plaid', name: '직조 체크', desc: '고유색 가로 띠와 보완색 세로 띠를 겹쳐 짠 천', draw(g, P) {
+      const { B, C, W, INK } = P;
+      g.fillStyle = W; g.fillRect(0, 0, S6, S6); weave(g, rect6(0, 0, S6, S6));
+      g.globalCompositeOperation = 'multiply';
+      [[40, B[1], 80], [190, B[2], 60], [300, B[3], 110], [470, B[1], 50], [540, B[0], 40]].forEach(([y, c, h]) => { g.globalAlpha = .85; g.fillStyle = c; g.fillRect(0, y, S6, h); });
+      [[30, C[0], 70], [150, C[2], 40], [250, C[1], 120], [420, C[3], 60], [520, C[2], 30]].forEach(([x, c, w]) => { g.globalAlpha = .75; g.fillStyle = c; g.fillRect(x, 0, w, S6); });
+      g.globalAlpha = 1; g.globalCompositeOperation = 'source-over';
+      g.fillStyle = INK; [110, 262, 408, 520].forEach((v) => { g.fillRect(v, 0, 3, S6); g.fillRect(0, v - 40, S6, 3); });
+    } },
+    { key: 'field', name: '컬러 필드', desc: '큰 색면 셋이 번지듯 쌓인 차분한 그림', draw(g, P) {
+      const { B, C } = P; const ground = C[2];
+      g.fillStyle = ground; g.fillRect(0, 0, S6, S6); weave(g, rect6(0, 0, S6, S6));
+      const soft = (y, h, color, blur) => { g.save(); g.filter = `blur(${blur}px)`; g.fillStyle = color; g.fillRect(70, y, S6 - 140, h); g.restore(); };
+      soft(70, 150, B[3], 7); soft(245, 70, C[1], 7); soft(340, 190, B[2], 7); soft(555, 6, B[0], 4);
+    } },
+    { key: 'fan', name: '부채', desc: '한 모서리에서 부채살처럼 펼쳐진 조각', turn: true, draw(g, P) {
+      const { B, C, N, W } = P; const R1 = S6 * 1.42; const R2 = S6 * .62; const R3 = S6 * .26;
+      const outer = [B[0], C[0], B[1], C[1], B[2], C[2], B[3], C[3]]; const inner = [N[0], B[3], W, B[2], N[1], B[0], N[0], B[1]];
+      g.fillStyle = W; g.fillRect(0, 0, S6, S6);
+      for (let i = 0; i < 8; i += 1) {
+        const a0 = -Math.PI / 2 + i * (Math.PI / 16); const a1 = a0 + Math.PI / 16;
+        const p = new Path2D(); p.arc(0, S6, R1, a0, a1); p.arc(0, S6, R2, a1, a0, true); p.closePath(); patch6(g, p, outer[i], P);
+        const q = new Path2D(); q.arc(0, S6, R2, a0, a1); q.arc(0, S6, R3, a1, a0, true); q.closePath(); patch6(g, q, inner[i], P);
+      }
+      const c = new Path2D(); c.moveTo(0, S6); c.arc(0, S6, R3, -Math.PI / 2, 0); c.closePath(); patch6(g, c, C[2], P);
+    } },
+    { key: 'wave', name: '물결 띠', desc: '물결 모양 띠가 부드럽게 흐른다', draw(g, P) {
+      const { B, C, N, W } = P; const colors = [W, B[0], C[1], B[3], N[0], B[2], C[0], B[1], N[2], C[3], C[2]];
+      const n = colors.length; const bh = S6 / (n - 1);
+      const edge = (k) => { const pts = []; for (let x = -10; x <= S6 + 10; x += 10) pts.push([x, k * bh + Math.sin(x / 95 + k * .9) * bh * .38]); return pts; };
+      for (let k = 0; k < n; k += 1) {
+        const top = k === 0 ? [[-10, -10], [S6 + 10, -10]] : edge(k - 1);
+        const bottom = k === n - 1 ? [[-10, S6 + 10], [S6 + 10, S6 + 10]] : edge(k);
+        const p = new Path2D(); top.forEach(([x, y], i) => (i ? p.lineTo(x, y) : p.moveTo(x, y)));
+        [...bottom].reverse().forEach(([x, y]) => p.lineTo(x, y)); p.closePath(); patch6(g, p, colors[k], P, 4);
+      }
+    } },
+  ];
+
+  /* 형태 하나를 (x, y) 에 size 크기로 그린다. 사람마다 다르게: 삼각 배치·회전은 pattern_seed 로 정한다 (결정론). */
+  function drawStyleArt(context, report, styleKey, x, y, size) {
+    const style = STYLES.find((item) => item.key === styleKey) || STYLES[0];
+    const P = styleColors(report.palette8);
+    const seed = report.pattern_seed;
+    const turns = style.turn ? (parseInt(seed.slice(0, 2), 16) % 4) : 0;
+    context.save();
+    context.translate(x, y);
+    context.scale(size / S6, size / S6);
+    context.beginPath();
+    context.rect(0, 0, S6, S6);
+    context.clip();
+    context.translate(S6 / 2, S6 / 2);
+    context.rotate(turns * Math.PI / 2);
+    context.translate(-S6 / 2, -S6 / 2);
+    style.draw(context, P, seededRandom(seed));
+    context.restore();
+    context.save();
+    context.translate(x, y);
+    context.scale(size / S6, size / S6);
+    context.lineWidth = 14;
+    context.strokeStyle = LINE_INK;
+    context.strokeRect(7, 7, S6 - 14, S6 - 14);
+    context.restore();
+    return style;
+  }
+
+  function drawThumb(canvas, report, styleKey) {
+    const context = canvas.getContext('2d');
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    drawStyleArt(context, report, styleKey, 0, 0, canvas.width);
+  }
+
+  function draw8(canvas, report, styleKey) {
     const p8 = report.palette8;
     const context = canvas.getContext('2d');
-    const layout = buildLayout8(report);
     const { width, height } = canvas;
     const unit = width / 1600;
     context.clearRect(0, 0, width, height);
@@ -378,9 +538,6 @@
     const artX = 120;
     const artY = 316;
     const artSize = 1360;
-    const frame = 26;      // 바깥 둘레 (먹색)
-    const seam = 12;       // 조각 사이 선 (먹색)
-    const inner = artSize - frame * 2;
     context.save();
     context.shadowColor = 'rgba(60,45,30,.2)';
     context.shadowBlur = 30;
@@ -388,29 +545,11 @@
     context.fillStyle = LINE_INK;
     context.fillRect(artX, artY, artSize, artSize);
     context.restore();
-    layout.forEach((piece) => {
-      const x0 = artX + frame + piece.x * inner;
-      const y0 = artY + frame + piece.y * inner;
-      const x1 = x0 + piece.width * inner;
-      const y1 = y0 + piece.height * inner;
-      const half = seam / 2;
-      const left = piece.x === 0 ? 0 : half;
-      const top = piece.y === 0 ? 0 : half;
-      const right = piece.x + piece.width >= .999 ? 0 : half;
-      const bottom = piece.y + piece.height >= .999 ? 0 : half;
-      drawPatch(context, { x: x0 + left, y: y0 + top, width: x1 - x0 - left - right, height: y1 - y0 - top - bottom },
-        slotColor(piece.slot, p8));
-    });
-    // 바깥 둘레 안쪽 바느질
-    context.setLineDash([4, 6]);
-    context.strokeStyle = 'rgba(255,255,255,.35)';
-    context.lineWidth = 1.4;
-    context.strokeRect(artX + 11, artY + 11, artSize - 22, artSize - 22);
-    context.setLineDash([]);
+    const style = drawStyleArt(context, report, styleKey, artX, artY, artSize);
 
     context.fillStyle = '#6f6354';
     context.font = '27px Pretendard, Arial, sans-serif';
-    context.fillText(report.pattern_family?.name || '나만의 조각보', 120, 1738);
+    context.fillText(`${style.name} 조각보`, 120, 1738);
     context.textAlign = 'right';
     context.fillStyle = '#9a8a75';
     context.font = '23px Georgia, serif';
@@ -420,12 +559,13 @@
     drawChipRow(context, '보완색 4', p8.complement, 1860);
     context.fillStyle = '#9a8b77';
     context.font = '20px Pretendard, Arial, sans-serif';
-    context.fillText('무채색  지백 · 연회색 · 먹회색 · 먹색   /   보완색 = 색상환 반대편, 명도를 원색에서 멀리', 120, 1962);
+    const patchNames = (p8.patch_neutrals || p8.neutrals.slice(0, 3)).map((n) => n.name).join(' · ');
+    context.fillText(`무채색  ${patchNames} 조각 · 먹색 선   /   보완색 = 색상환 반대편, 명도를 원색에서 멀리`, 120, 1962);
     context.restore();
-    return { layout, palette8: p8 };
+    return { style, palette8: p8 };
   }
 
-  const api = { ELEMENTS, paletteForReport, buildLayout, draw, buildLayout8, draw8 };
+  const api = { ELEMENTS, paletteForReport, buildLayout, draw, buildLayout8, draw8, STYLES, drawThumb };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.AstralJogakbo = api;
 }(typeof globalThis !== 'undefined' ? globalThis : this));
