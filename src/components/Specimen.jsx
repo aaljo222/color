@@ -2,7 +2,7 @@ import { absUrl } from "../api.js";
 
 export const ROLE = { dominant: "주조색", supporting: "보조색", atmospheric: "분위기색", accent: "강조색" };
 const AXIS = { emotion: "감정", time: "시간", space: "장소", quality: "선명도", object: "사물", image: "그림" };
-const HOW = { keyword: "낱말 일치", label: "모델 라벨", retrieval: "검색", fallback: "기본 톤", lexicon: "사전 등급", grade: "모델 등급", measured: "그림에서 측정" };
+const HOW = { keyword: "낱말 일치", label: "모델 라벨", corpus: "코퍼스 문단", retrieval: "검색", fallback: "기본 톤", lexicon: "사전 등급", grade: "모델 등급", measured: "그림에서 측정" };
 
 // 기억 표본 한 장: 왼쪽 그림, 오른쪽 라벨(해시·면적비 막대·색 목록·검증)
 export default function Specimen({ data }) {
@@ -56,6 +56,7 @@ export default function Specimen({ data }) {
               : `${v.status === "PASS" ? "측정 일치" : "측정 불일치"} · 최대 ΔE00 ${Number(v.max_de00).toFixed(2)}`}
           </p>
         )}
+        {data.grounding && <Grounding g={data.grounding} />}
         <p className="meta">
           {data.kb_version} / {data.engine_version}
           {data.cache_hit ? " · 같은 기억이라 같은 표본" : ""}
@@ -63,6 +64,26 @@ export default function Specimen({ data }) {
         </p>
       </div>
     </article>
+  );
+}
+
+// 코퍼스 RAG 근거 (eng-2.2): 이 표본에 쓰인 장면·사물 문단과, 적용된 규칙을 뒷받침하는 연구
+function Grounding({ g }) {
+  const n = (g.scenes?.length || 0) + (g.objects?.length || 0) + (g.research?.length || 0);
+  if (!n) return null;
+  return (
+    <details className="grounding">
+      <summary>왜 이 색인가 — 근거 {n}건 <small>({g.corpus_version})</small></summary>
+      {g.scenes?.length > 0 && (
+        <ul>{g.scenes.map((s) => <li key={s.id}>{AXIS[s.axis] || s.axis} · “{s.text}” → {s.color_note}{s.status === "draft" ? <em className="tag">초안</em> : null}</li>)}</ul>
+      )}
+      {g.objects?.length > 0 && (
+        <ul>{g.objects.map((o) => <li key={o.id}>사물 “{o.name}” · 코퍼스 등급 {o.grade.join(" · ")}{o.status === "draft" ? <em className="tag">초안</em> : null}</li>)}</ul>
+      )}
+      {g.research?.length > 0 && (
+        <ul className="refs">{g.research.map((r) => <li key={r.id}><a href={r.url} target="_blank" rel="noreferrer">{r.citation}</a></li>)}</ul>
+      )}
+    </details>
   );
 }
 

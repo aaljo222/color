@@ -191,3 +191,10 @@ button { cursor: pointer; }
   .ptable th:nth-child(5), .ptable td:nth-child(5) { display: none; }
 }
 @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+
+/* eng-2.2 코퍼스 근거 */
+.grounding { margin: 12px 0 4px; font-size: 13px; line-height: 1.5; }
+.grounding summary { cursor: pointer; font-weight: 600; }
+.grounding ul { margin: 6px 0 0; padding-left: 18px; }
+.grounding li { margin: 2px 0; }
+.grounding .refs a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
