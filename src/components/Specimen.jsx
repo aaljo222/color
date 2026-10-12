@@ -2,7 +2,7 @@ import { absUrl } from "../api.js";
 
 export const ROLE = { dominant: "주조색", supporting: "보조색", atmospheric: "분위기색", accent: "강조색" };
 const AXIS = { emotion: "감정", time: "시간", space: "장소", quality: "선명도", object: "사물", image: "그림" };
-const HOW = { keyword: "낱말 일치", label: "모델 라벨", corpus: "코퍼스 문단", retrieval: "검색", fallback: "기본 톤", lexicon: "사전 등급", grade: "모델 등급", measured: "그림에서 측정" };
+const HOW = { keyword: "낱말 일치", label: "모델 라벨", corpus: "코퍼스 문단", retrieval: "검색", fallback: "기본 톤", lexicon: "사전 등급", table: "확정 색표", grade: "모델 등급", measured: "그림에서 측정" };
 
 // 기억 표본 한 장: 왼쪽 그림, 오른쪽 라벨(해시·면적비 막대·색 목록·검증)
 export default function Specimen({ data }) {
