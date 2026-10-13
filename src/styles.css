@@ -204,3 +204,14 @@ button { cursor: pointer; }
 .astral-frame { display: block; width: 100vw; margin: -48px 0 0 calc(50% - 50vw); border: 0; background: #f3efe8; }
 body.astral-mode .main { padding-bottom: 0; min-height: 0; }
 body.astral-mode .foot { display: none; }
+
+/* eng-2.6 후보 색 · 칩별 색-감정 근거 */
+.roles .why.link a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+.cands { margin: 12px 0 0; font-size: 13px; }
+.cands summary { cursor: pointer; font-weight: 600; }
+.cands ul { list-style: none; margin: 6px 0 0; padding: 0; }
+.cands li { display: grid; grid-template-columns: 22px 1fr auto; column-gap: 8px; row-gap: 0; align-items: center; padding: 4px 0; opacity: .6; }
+.cands li.on { opacity: 1; font-weight: 600; }
+.cands li small { grid-column: 2 / 3; color: var(--muted); font-weight: 400; }
+.cands li .num { grid-row: 1 / 3; grid-column: 3; font-size: 12px; }
+.cands .chip { width: 18px; height: 18px; grid-row: 1 / 3; }
