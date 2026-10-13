@@ -1,0 +1,31 @@
+From 213d1b60c7917cd047d6c267cdce57d19c838e87 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 13 Oct 2026 14:15:46 +0000
+Subject: [PATCH] =?UTF-8?q?=EC=97=94=EC=A7=84=20=EC=84=A0=ED=83=9D?=
+ =?UTF-8?q?=EC=A7=80=20=EC=9D=B4=EB=A6=84=20eng-2.6?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01AtJesUhFW86JQPC5aSkQic
+---
+ src/pages/Memory.jsx | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/pages/Memory.jsx b/src/pages/Memory.jsx
+index b02241b..e22ddb4 100644
+--- a/src/pages/Memory.jsx
++++ b/src/pages/Memory.jsx
+@@ -50,7 +50,7 @@ export default function Memory() {
+             <select value={engine} onChange={(e) => setEngine(e.target.value)}>
+               <option value="">서버 기본</option>
+               <option value="palette">팔레트 계산 (eng-1.2)</option>
+-              <option value="image_first">그림 먼저 (eng-2.0)</option>
++              <option value="image_first">그림 먼저 (eng-2.6)</option>
+             </select>
+           </label>
+           {engine !== "palette" && (
+-- 
+2.43.0
+
