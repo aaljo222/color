@@ -50,7 +50,7 @@ export default function Memory() {
             <select value={engine} onChange={(e) => setEngine(e.target.value)}>
               <option value="">서버 기본</option>
               <option value="palette">팔레트 계산 (eng-1.2)</option>
-              <option value="image_first">그림 먼저 (eng-2.0)</option>
+              <option value="image_first">그림 먼저 (eng-2.6)</option>
             </select>
           </label>
           {engine !== "palette" && (
