@@ -1,0 +1,22 @@
+2026-10-13T14:30:35.489881866Z [inf]  Starting Container
+2026-10-13T14:30:36.682218043Z [err]  INFO:     Started server process [1]
+2026-10-13T14:30:36.682222063Z [err]  INFO:     Waiting for application startup.
+2026-10-13T14:30:36.682225653Z [err]  INFO:     Application startup complete.
+2026-10-13T14:30:36.682229173Z [err]  INFO:     Uvicorn running on http://0.0.0.0:8080 (Press CTRL+C to quit)
+2026-10-13T14:30:37.116593795Z [err]  INFO:httpx:HTTP Request: GET https://qeewoedywjyhmcfyqavj.supabase.co/rest/v1/color_prompts?select=key%2Cprompt%2Cembedding_model&source=neq.rule&limit=5000 "HTTP/2 200 OK"
+2026-10-13T14:31:17.040736520Z [err]  INFO:httpx:HTTP Request: GET https://qeewoedywjyhmcfyqavj.supabase.co/rest/v1/memory_specimens?select=id&user_id=eq.1b1ca8a9-5a73-44b0-b24d-d5242f19dcc7&cache_key=eq.fe26bb2e9b4110bd&limit=1 "HTTP/2 200 OK"
+2026-10-13T14:31:17.040745590Z [err]  INFO:     ACCESS|ip#=9d7b7e1c7e|method=POST|path=/api/analyze|status=200
+2026-10-13T14:31:17.040751050Z [inf]  INFO:     100.64.0.1:14224 - "POST /api/analyze HTTP/1.1" 200 OK
+2026-10-13T14:31:17.040763190Z [err]  INFO:httpx:HTTP Request: GET https://qeewoedywjyhmcfyqavj.supabase.co/rest/v1/profiles?select=id%2Ccredits%2Cfree_credit_claimed&id=eq.1b1ca8a9-5a73-44b0-b24d-d5242f19dcc7 "HTTP/2 200 OK"
+2026-10-13T14:31:17.040770150Z [err]  INFO:     [RAG] corpus-0.1+d01b70bd · 장면 203 · 사물 75 · 연구 19 · embedding · τc=0.75
+2026-10-13T14:31:17.040773730Z [err]  INFO:     [KB] kb-0.2.1 · retriever=embedding · τ=0.7 · corpus=on
+2026-10-13T14:31:17.040776950Z [err]  INFO:httpx:HTTP Request: GET https://qeewoedywjyhmcfyqavj.supabase.co/rest/v1/color_lexicon?select=concept%2Chue%2Clightness%2Cchroma%2Csource&limit=5000 "HTTP/2 200 OK"
+2026-10-13T14:31:17.040781110Z [err]  INFO:httpx:HTTP Request: GET https://qeewoedywjyhmcfyqavj.supabase.co/rest/v1/mac_sentence_locks?select=payload&key=eq.393145a4b82d31a707f1b3ba&limit=1 "HTTP/2 200 OK"
+2026-10-13T14:31:17.040784399Z [err]  INFO:httpx:HTTP Request: GET https://qeewoedywjyhmcfyqavj.supabase.co/storage/v1/object/specimens/locks/393145a4b82d31a707f1b3ba.png "HTTP/2 200 OK"
+2026-10-13T14:35:07.221501993Z [err]  INFO:httpx:HTTP Request: GET https://qeewoedywjyhmcfyqavj.supabase.co/rest/v1/profiles?select=id%2Ccredits%2Cfree_credit_claimed&id=eq.1b1ca8a9-5a73-44b0-b24d-d5242f19dcc7 "HTTP/2 200 OK"
+2026-10-13T14:35:07.221505383Z [err]  INFO:httpx:HTTP Request: GET https://qeewoedywjyhmcfyqavj.supabase.co/rest/v1/color_lexicon?select=concept%2Chue%2Clightness%2Cchroma%2Csource&limit=5000 "HTTP/2 200 OK"
+2026-10-13T14:35:07.221508223Z [err]  INFO:httpx:HTTP Request: GET https://qeewoedywjyhmcfyqavj.supabase.co/rest/v1/mac_sentence_locks?select=payload&key=eq.393145a4b82d31a707f1b3ba&limit=1 "HTTP/2 200 OK"
+2026-10-13T14:35:07.221510783Z [err]  INFO:httpx:HTTP Request: GET https://qeewoedywjyhmcfyqavj.supabase.co/storage/v1/object/specimens/locks/393145a4b82d31a707f1b3ba.png "HTTP/2 200 OK"
+2026-10-13T14:35:07.221513243Z [err]  INFO:httpx:HTTP Request: GET https://qeewoedywjyhmcfyqavj.supabase.co/rest/v1/memory_specimens?select=id&user_id=eq.1b1ca8a9-5a73-44b0-b24d-d5242f19dcc7&cache_key=eq.fe26bb2e9b4110bd&limit=1 "HTTP/2 200 OK"
+2026-10-13T14:35:07.221515633Z [err]  INFO:     ACCESS|ip#=9d7b7e1c7e|method=POST|path=/api/analyze|status=200
+2026-10-13T14:35:07.221518473Z [inf]  INFO:     100.64.0.2:62706 - "POST /api/analyze HTTP/1.1" 200 OK
