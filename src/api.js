@@ -4,8 +4,8 @@ export const API = (import.meta.env.VITE_API_BASE || "http://localhost:8000").re
 // 백엔드가 "/api/dev/images/…" 같은 상대 경로를 주면 API 주소를 앞에 붙인다 (메모리 저장소 개발 모드)
 export const absUrl = (u) => (u && u.startsWith("/") ? API + u : u);
 
-export async function api(path, { method = "GET", body, token, query } = {}) {
-  const url = new URL(API + path);
+export async function api(path, { method = "GET", body, token, query, sameOrigin = false } = {}) {
+  const url = sameOrigin ? new URL(path, window.location.origin) : new URL(API + path);
   if (query) Object.entries(query).forEach(([k, v]) => v !== undefined && url.searchParams.set(k, v));
   const headers = {};
   if (body !== undefined) headers["Content-Type"] = "application/json";

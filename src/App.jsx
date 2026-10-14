@@ -9,8 +9,11 @@ import Login from "./pages/Login.jsx";
 import Signup from "./pages/Signup.jsx";
 import Concierge from "./pages/Concierge.jsx";
 import Astral from "./pages/Astral.jsx";
+import Chat from "./pages/Chat.jsx";
+import { ChatProvider } from "./chat/ChatContext.jsx";
+import ChatWidget from "./chat/ChatWidget.jsx";
 
-const NAV = [["/", "기억 표본"], ["/palette", "색 문장"], ["/tools", "색 변환"], ["/astral", "사주 색"], ["/vault", "내 보관함"], ["/concierge", "문의"]];
+const NAV = [["/", "기억 표본"], ["/palette", "색 문장"], ["/tools", "색 변환"], ["/astral", "사주 색"], ["/chat", "색채 챗봇"], ["/vault", "내 보관함"], ["/concierge", "문의"]];
 
 export default function App() {
   const { user } = useAuth();
@@ -22,41 +25,45 @@ export default function App() {
     if (code) nav(`/login?err=${encodeURIComponent(code)}`, { replace: true });
   }, [nav]);
   return (
-    <div className="shell">
-      <header className="top">
-        <NavLink to="/" className="mark" aria-label="MaC 처음으로">
-          <span className="mark-word">MaC</span>
-          <span className="mark-sub">Memory &amp; Color</span>
-        </NavLink>
-        <nav className="nav" aria-label="주 메뉴">
-          {NAV.map(([to, label]) => (
-            <NavLink key={to} to={to} end={to === "/"} className={({ isActive }) => (isActive ? "on" : "")}>{label}</NavLink>
-          ))}
-        </nav>
-        <div className="who">
-          {user ? (
-            <button className="link" onClick={() => supabase.auth.signOut()}>로그아웃</button>
-          ) : (
-            <><NavLink to="/login" className="link">로그인</NavLink><span className="sep" aria-hidden>·</span><NavLink to="/signup" className="link">회원가입</NavLink></>
-          )}
-        </div>
-      </header>
-      <main className="main">
-        <Routes>
-          <Route path="/" element={<Memory />} />
-          <Route path="/palette" element={<Palette />} />
-          <Route path="/tools" element={<Tools />} />
-          <Route path="/astral" element={<Astral />} />
-          <Route path="/vault" element={<Vault />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
-          <Route path="/concierge" element={<Concierge />} />
-          <Route path="*" element={<p className="empty">없는 페이지입니다. 위 메뉴에서 고르세요.</p>} />
-        </Routes>
-      </main>
-      <footer className="foot">
-        <p>색 값은 언어 모델이 아니라 계산기가 정합니다. 같은 기억은 같은 표본이 됩니다.</p>
-      </footer>
-    </div>
+    <ChatProvider>
+      <div className="shell">
+        <header className="top">
+          <NavLink to="/" className="mark" aria-label="MaC 처음으로">
+            <span className="mark-word">MaC</span>
+            <span className="mark-sub">Memory &amp; Color</span>
+          </NavLink>
+          <nav className="nav" aria-label="주 메뉴">
+            {NAV.map(([to, label]) => (
+              <NavLink key={to} to={to} end={to === "/"} className={({ isActive }) => (isActive ? "on" : "")}>{label}</NavLink>
+            ))}
+          </nav>
+          <div className="who">
+            {user ? (
+              <button className="link" onClick={() => supabase.auth.signOut()}>로그아웃</button>
+            ) : (
+              <><NavLink to="/login" className="link">로그인</NavLink><span className="sep" aria-hidden>·</span><NavLink to="/signup" className="link">회원가입</NavLink></>
+            )}
+          </div>
+        </header>
+        <main className="main">
+          <Routes>
+            <Route path="/" element={<Memory />} />
+            <Route path="/palette" element={<Palette />} />
+            <Route path="/tools" element={<Tools />} />
+            <Route path="/astral" element={<Astral />} />
+            <Route path="/chat" element={<Chat />} />
+            <Route path="/vault" element={<Vault />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
+            <Route path="/concierge" element={<Concierge />} />
+            <Route path="*" element={<p className="empty">없는 페이지입니다. 위 메뉴에서 고르세요.</p>} />
+          </Routes>
+        </main>
+        <footer className="foot">
+          <p>색 값은 언어 모델이 아니라 계산기가 정합니다. 같은 기억은 같은 표본이 됩니다.</p>
+        </footer>
+      </div>
+      <ChatWidget />
+    </ChatProvider>
   );
 }
