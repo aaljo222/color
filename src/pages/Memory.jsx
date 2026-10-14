@@ -17,6 +17,7 @@ export default function Memory() {
   const [email, setEmail] = useState("");
   const [keep, setKeep] = useState(false);
   const [engine, setEngine] = useState("");          // "" = 서버 기본(ENGINE_MODE), A/B 비교용
+  const [variant, setVariant] = useState(0);          // eng-2.6 변형 번호: 같은 문장으로 다른 그림 (같은 번호면 같은 값)
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const [data, setData] = useState(null);
@@ -62,7 +63,7 @@ export default function Memory() {
     speech.stop();
     try {
       const d = await api("/api/analyze", { method: "POST", token,
-        body: { memory: memory.trim(), email: email || null, keep_text: !!user && keep, include_image: true, engine: engine || null } });
+        body: { memory: memory.trim(), email: email || null, keep_text: !!user && keep, include_image: true, engine: engine || null, variant: Number(variant) || 0 } });
       setData(d);
     } catch (ex) { setErr(ex.message); } finally { setBusy(false); }
   }
@@ -104,9 +105,17 @@ export default function Memory() {
             <select value={engine} onChange={(e) => setEngine(e.target.value)}>
               <option value="">서버 기본</option>
               <option value="palette">팔레트 계산 (eng-1.2)</option>
-              <option value="image_first">그림 먼저 (eng-2.0)</option>
+              <option value="image_first">그림 먼저 (eng-2.6)</option>
             </select>
           </label>
+          {engine !== "palette" && (
+            <label className="field">
+              <span>변형 번호 (같은 문장으로 다른 그림)</span>
+              <select value={variant} onChange={(e) => setVariant(e.target.value)}>
+                {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => <option key={n} value={n}>{n === 0 ? "0 (기본)" : n}</option>)}
+              </select>
+            </label>
+          )}
           {user && (
             <label className="check">
               <input type="checkbox" checked={keep} onChange={(e) => setKeep(e.target.checked)} />
@@ -115,7 +124,7 @@ export default function Memory() {
           )}
         </div>
         <button className="primary" disabled={busy || n < 10}>{busy ? "표본을 만드는 중…" : "표본 만들기"}</button>
-        {!user && <p className="hint">로그인하지 않으면 하루 2번까지 만들 수 있고, 결과는 저장되지 않습니다. <Link to="/login">로그인</Link>하면 보관함에 남습니다.</p>}
+        {!user && <p className="hint">로그인하지 않으면 접속한 인터넷 주소(IP)마다 하루 2번까지 만들 수 있고(메일 주소와는 상관없음), 결과는 저장되지 않습니다. <Link to="/login">로그인</Link>하면 보관함에 남습니다.</p>}
         {err && <p className="error" role="alert">{err}</p>}
       </form>
       {data?.save_error && <p className="hint" role="status">{data.save_error}</p>}

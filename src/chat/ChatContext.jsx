@@ -80,7 +80,7 @@ export function ChatProvider({ children }) {
       // TODO: 인증 정책 확정
       const askData = import.meta.env.VITE_CHAT_MOCK === "1"
         ? await mockAsk(text)
-        : await api(ASK, { method: "POST", body: { text }, token, sameOrigin: true });
+        : await api(ASK, { method: "POST", body: { text }, token });
       if (!aliveRef.current) return;
       asking = false;
       const jobId = askData?.job_id;
@@ -92,7 +92,7 @@ export function ChatProvider({ children }) {
       for (let attempt = 0; attempt < POLL_MAX; attempt += 1) {
         const result = import.meta.env.VITE_CHAT_MOCK === "1"
           ? await mockResult(jobId)
-          : await api(RESULT(jobId), { token, sameOrigin: true });
+          : await api(RESULT(jobId), { token });
         if (!aliveRef.current) return;
         if (result?.status === "done") {
           updateItem(id, { status: "done", data: result.data || {} });
