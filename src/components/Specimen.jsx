@@ -175,7 +175,8 @@ function Grounding({ g }) {
       <summary>
         왜 이 색인가 — 근거 {n}건{" "}
         <small title="코퍼스 세 파일 내용의 지문. 문단이 하나만 바뀌어도 바뀝니다 (표본 해시와 다른 값)">
-          (코퍼스 {g.corpus_version})
+          {/* corpus-0.1+2c40460e = 코퍼스 형식 판 + 장면·사물·연구 세 파일 내용의 해시 앞 8자 (어느 근거 자료로 계산했는지) */}
+          (근거 자료 {String(g.corpus_version || "").split("+")[0]} · 내용 지문 {String(g.corpus_version || "").split("+")[1] || "—"})
         </small>
       </summary>
       {g.missing?.length > 0 && (
