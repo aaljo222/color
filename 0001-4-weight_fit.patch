@@ -1,0 +1,49 @@
+From 56457f38415b78ca5012e0f5bd5013e04434406c Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Thu, 15 Oct 2026 00:02:16 +0000
+Subject: [PATCH] =?UTF-8?q?=ED=8C=80=20=EC=9E=85=EB=A0=A5=20=EA=B0=80?=
+ =?UTF-8?q?=EC=A4=91=EC=B9=98=20=E2=86=94=204=EC=83=89=20=EB=B9=84?=
+ =?UTF-8?q?=EC=A4=91=20=EB=B9=84=EA=B5=90=20=ED=91=9C=20(weight=5Ffit)?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_014hSLqNKwfPkSe9x2ZNxeEK
+---
+ src/components/Specimen.jsx | 19 +++++++++++++++++++
+ 1 file changed, 19 insertions(+)
+
+diff --git a/src/components/Specimen.jsx b/src/components/Specimen.jsx
+index 84e5d7d..3d3ed82 100644
+--- a/src/components/Specimen.jsx
++++ b/src/components/Specimen.jsx
+@@ -147,6 +147,25 @@ export default function Specimen({ data }) {
+           </p>
+         )}
+         {data.candidates?.length > 0 && <Candidates list={data.candidates} />}
++        {v.weight_fit && (
++          <details className="cands">
++            <summary>팀 입력 가중치 ↔ 4색 비중 — 최대 차이 {Math.round(v.weight_fit.max_abs_diff * 100)}%p</summary>
++            <ul>
++              {v.weight_fit.chips.map((c) => (
++                <li key={c.hex} className="on">
++                  <span className="chip" style={{ background: c.hex }} />
++                  <span>목표 {Math.round(c.target * 100)}% → 그림 {Math.round(c.painted * 100)}%</span>
++                  <span className="num">{c.hex}</span>
++                </li>
++              ))}
++            </ul>
++            {v.weight_fit.priority && (
++              <p className="hint">
++                {v.weight_fit.source}: {Object.entries(v.weight_fit.priority).map(([k, w]) => `${k} ${w}`).join(" · ")}
++              </p>
++            )}
++          </details>
++        )}
+         {data.grounding && <Grounding g={data.grounding} />}
+         <p className="meta">
+           {data.kb_version} / {data.engine_version}
+-- 
+2.43.0
+
