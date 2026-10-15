@@ -147,6 +147,25 @@ export default function Specimen({ data }) {
           </p>
         )}
         {data.candidates?.length > 0 && <Candidates list={data.candidates} />}
+        {v.weight_fit && (
+          <details className="cands">
+            <summary>팀 입력 가중치 ↔ 4색 비중 — 최대 차이 {Math.round(v.weight_fit.max_abs_diff * 100)}%p</summary>
+            <ul>
+              {v.weight_fit.chips.map((c) => (
+                <li key={c.hex} className="on">
+                  <span className="chip" style={{ background: c.hex }} />
+                  <span>목표 {Math.round(c.target * 100)}% → 그림 {Math.round(c.painted * 100)}%</span>
+                  <span className="num">{c.hex}</span>
+                </li>
+              ))}
+            </ul>
+            {v.weight_fit.priority && (
+              <p className="hint">
+                {v.weight_fit.source}: {Object.entries(v.weight_fit.priority).map(([k, w]) => `${k} ${w}`).join(" · ")}
+              </p>
+            )}
+          </details>
+        )}
         {data.grounding && <Grounding g={data.grounding} />}
         <p className="meta">
           {data.kb_version} / {data.engine_version}
